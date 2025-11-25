@@ -27,7 +27,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
     }
   }, [isPlaying]);
 
-  const toggleMute = useCallback(() => {
+  const toggleMute = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent play/pause when clicking mute button
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
@@ -37,6 +38,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
   useEffect(() => {
     if (videoRef.current) {
       if (isActive) {
+        videoRef.current.muted = true; // Ensure video starts muted
+        setIsMuted(true);
         videoRef.current.play().then(() => setIsPlaying(true)).catch((e) => {
           console.log("Autoplay prevented or error:", e);
           setIsPlaying(false); // Set to false if autoplay fails
@@ -50,15 +53,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
   }, [isActive]);
 
   return (
-    <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
+    <div 
+      className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden"
+      onClick={togglePlay} // <<<<<<<<<< Moved onClick here to cover the whole player area
+    >
       <video
         ref={videoRef}
         src={video.src}
         loop
         playsInline
-        muted={isMuted} // Control muted state from component
-        onClick={togglePlay}
-        className="w-full h-full object-contain md:object-cover aspect-[9/16]"
+        // muted={isMuted} removed - controlled imperatively in useEffect and toggleMute
+        // onClick={togglePlay} removed - moved to parent div
+        className="w-full h-full object-cover aspect-[9/16]" // <<<<<<<<<< Corrected class
       >
         Your browser does not support the video tag.
       </video>
@@ -115,19 +121,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
           <div className="flex flex-col items-center">
             <Button variant="ghost" className="p-2 rounded-full text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
               {isMuted ? (
+                // Simplified mute icon
                 <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052zM16 10a4 4 0 01-7.054 2.502l1.674-1.672A2 2 0 0013.134 10H16z" clipRule="evenodd"></path>
-                  <path fillRule="evenodd" d="M13.134 10L14.475 8.659A5 5 0 0011 5H9.383L5.052 1.052A1 1 0 016.383 0L10 3.617l3.617-3.617a1 1 0 011.621.764L13.134 10zM14 10a4 4 0 01-7.054 2.502L13.134 10z" clipRule="evenodd" />
-                  <path fillRule="evenodd" d="M16 10a4 4 0 01-7.054 2.502l1.674-1.672A2 2 0 0013.134 10H16z" clipRule="evenodd" />
-                  <path fillRule="evenodd" d="M16 10a4 4 0 01-7.054 2.502L13.134 10z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052z" clipRule="evenodd"></path>
+                  <path stroke="currentColor" strokeWidth="2" d="M14 7l-8 8M6 7l8 8" /> {/* X mark */}
                 </svg>
               ) : (
+                // Simplified unmute icon
                 <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052zM14 8a6 6 0 010 4v-4zm-7 8.243V4.757L3.052 7.052A1 1 0 002 8v4a1 1 0 001.052.948L7 16.243zM16.138 11.5a2.001 2.001 0 010-3l1.838-1.837a1 1 0 111.414 1.414L17.552 10l1.838 1.838a1 1 0 01-1.414 1.414l-1.838-1.838z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052zM14 8a6 6 0 010 4V8z" clipRule="evenodd"></path>
                 </svg>
               )}
             </Button>
-            {/* Mute state is not a number, so no span for it */}
           </div>
         </div>
       </div>
