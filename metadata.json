@@ -1,0 +1,8 @@
+{
+  "name": "QuickVid",
+  "description": "A simple video posting application inspired by TikTok.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
