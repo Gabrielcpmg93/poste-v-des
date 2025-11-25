@@ -1,18 +1,30 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Video } from '../types';
+import { Video, Comment } from '../types';
 import Button from './Button';
+import { loadLikedVideoIds, saveLikedVideoIds } from '../utils/localStorage';
+import { v4 as uuidv4 } from 'uuid';
 
 interface VideoPlayerProps {
   video: Video;
   isActive: boolean; // Indicates if this video is currently in the viewport
+  onVideoUpdate: (video: Video) => void; // Callback to update video in App state and localStorage
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdate }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [showPlayPauseOverlay, setShowPlayPauseOverlay] = useState(false);
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [newCommentText, setNewCommentText] = useState('');
+
+  // Load liked status from localStorage
+  useEffect(() => {
+    const likedIds = loadLikedVideoIds();
+    setIsLiked(likedIds.has(video.id));
+  }, [video.id]);
 
   const togglePlay = useCallback(() => {
     if (videoRef.current) {
@@ -34,6 +46,48 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
       setIsMuted(!isMuted);
     }
   }, [isMuted]);
+
+  const handleLikeClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent play/pause when clicking like button
+    let currentLikedIds = loadLikedVideoIds();
+    let updatedVideo = { ...video };
+
+    if (isLiked) {
+      updatedVideo.likesCount -= 1;
+      currentLikedIds.delete(video.id);
+    } else {
+      updatedVideo.likesCount += 1;
+      currentLikedIds.add(video.id);
+    }
+
+    setIsLiked(!isLiked);
+    saveLikedVideoIds(currentLikedIds);
+    onVideoUpdate(updatedVideo); // Update video in parent state and localStorage
+  }, [isLiked, video, onVideoUpdate]);
+
+  const handleCommentClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent play/pause when clicking comment button
+    setShowCommentsModal(true);
+  }, []);
+
+  const handleAddComment = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCommentText.trim()) {
+      const newComment: Comment = {
+        id: uuidv4(),
+        username: 'You', // For simplicity, assume the current user is 'You'
+        text: newCommentText.trim(),
+        timestamp: Date.now(),
+      };
+      const updatedVideo = {
+        ...video,
+        commentsData: [...video.commentsData, newComment],
+        commentsCount: video.commentsCount + 1,
+      };
+      onVideoUpdate(updatedVideo);
+      setNewCommentText('');
+    }
+  }, [newCommentText, video, onVideoUpdate]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -62,9 +116,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
         src={video.src}
         loop
         playsInline
-        // muted={isMuted} removed - controlled imperatively in useEffect and toggleMute
-        // onClick={togglePlay} removed - moved to parent div
-        className="w-full h-full object-cover aspect-[9/16]" // <<<<<<<<<< Corrected class
+        className="w-full h-full object-cover aspect-[9/16]"
       >
         Your browser does not support the video tag.
       </video>
@@ -73,12 +125,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
       {showPlayPauseOverlay && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300">
           {isPlaying ? (
-            <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"></path>
+            <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 7H11V17H8V7ZM13 7H16V17H13V7Z" />
             </svg>
           ) : (
-            <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"></path>
+            <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 5V19L19 12L8 5Z" />
             </svg>
           )}
         </div>
@@ -87,55 +139,88 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive }) => {
       {/* Video Overlay and Controls */}
       <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 bg-gradient-to-t from-black/50 via-transparent to-transparent">
         {/* User Info and Description */}
-        <div className="text-white mb-8 md:mb-12 max-w-[80%]">
+        <div className="text-white mb-20 md:mb-24 max-w-[80%]"> {/* Increased mb for action buttons */}
           <p className="font-bold text-lg">@{video.artist}</p>
           <p className="text-sm mt-1">{video.caption}</p>
         </div>
 
         {/* Action Buttons (Like, Comment, Share, Mute) */}
-        <div className="absolute right-4 bottom-24 flex flex-col space-y-4">
+        <div className="absolute right-4 bottom-24 flex flex-col items-end space-y-4">
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className="p-2 rounded-full text-white">
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
+            <Button variant="ghost" className={`p-2 rounded-full ${isLiked ? 'text-red-500' : 'text-white'}`} onClick={handleLikeClick}>
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z"></path>
               </svg>
             </Button>
-            <span className="text-sm font-semibold">{video.likes}</span>
+            <span className="text-sm font-semibold text-white">{video.likesCount}</span>
           </div>
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className="p-2 rounded-full text-white">
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.767-1.39L2 17l1.674-3.092A9.124 9.124 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM9 9a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd"></path>
+            <Button variant="ghost" className="p-2 rounded-full text-white" onClick={handleCommentClick}>
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21.99 4C21.99 2.9 21.1 2 20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H18L22 22L21.99 4ZM20 16H6V4H20V16Z"></path>
               </svg>
             </Button>
-            <span className="text-sm font-semibold">{video.comments}</span>
+            <span className="text-sm font-semibold text-white">{video.commentsCount}</span>
           </div>
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className="p-2 rounded-full text-white">
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.742l4.94-2.47C13.456 7.68 14.163 8 15 8z"></path>
+            <Button variant="ghost" className="p-2 rounded-full text-white" onClick={(e) => e.stopPropagation()}> {/* Stop propagation for share */}
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.15C16.44 7.62 17.12 7.92 18 7.92C19.66 7.92 21 6.58 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.85C7.56 9.38 6.88 9.08 6 9.08C4.34 9.08 3 10.42 3 12C3 13.58 4.34 14.92 6 14.92C6.88 14.92 7.56 14.62 8.04 14.15L15.09 18.3C15.04 18.53 15 18.76 15 19C15 20.66 16.34 22 18 22C19.66 22 21 20.66 21 19C21 17.34 19.66 16.08 18 16.08Z"></path>
               </svg>
             </Button>
-            <span className="text-sm font-semibold">{video.shares}</span>
+            <span className="text-sm font-semibold text-white">{video.shares}</span>
           </div>
           <div className="flex flex-col items-center">
             <Button variant="ghost" className="p-2 rounded-full text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
               {isMuted ? (
-                // Simplified mute icon
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052z" clipRule="evenodd"></path>
-                  <path stroke="currentColor" strokeWidth="2" d="M14 7l-8 8M6 7l8 8" /> {/* X mark */}
+                // Mute icon
+                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.27 3L3 4.27L7.73 9H3V15H7.73L12 19.27V11.27L17.73 17L19 18.27L20.27 19.55L21.55 20.82L22.83 22.1L24.1 23.37L22.83 24.65L21.55 23.37L20.27 22.1L19 20.82L17.73 19.55L12 13.82L4.27 6.1L3 4.82L4.27 3ZM12 4.09V6.1L9.12 3.22L12 4.09Z M16.5 12C16.5 10.23 15.48 8.78 14 8.19V10.37L16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37L20.27 13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
                 </svg>
               ) : (
-                // Simplified unmute icon
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M9.383 1.052A1 1 0 0110 2v16a1 1 0 01-1.621.764L5 15H3a1 1 0 01-1-1V6a1 1 0 011-1h2l3.383-2.764A1 1 0 019.383 1.052zM14 8a6 6 0 010 4V8z" clipRule="evenodd"></path>
+                // Unmute icon
+                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 9H7L12 4V20L7 15H3V9ZM16.5 12C16.5 10.23 15.48 8.78 14 8.19V15.81C15.48 15.22 16.5 13.77 16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37V13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
                 </svg>
               )}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Comments Modal */}
+      {showCommentsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-end z-30" onClick={() => setShowCommentsModal(false)}>
+          <div className="bg-gray-900 w-full max-w-md h-3/4 rounded-t-lg p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-white mb-4">Comments ({video.commentsCount})</h3>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {video.commentsData.length === 0 ? (
+                <p className="text-gray-400">No comments yet. Be the first!</p>
+              ) : (
+                video.commentsData.slice().sort((a, b) => a.timestamp - b.timestamp).map((comment) => (
+                  <div key={comment.id} className="bg-gray-800 p-3 rounded-md">
+                    <p className="font-semibold text-white">@{comment.username}</p>
+                    <p className="text-gray-300">{comment.text}</p>
+                    <span className="text-xs text-gray-500">{new Date(comment.timestamp).toLocaleString()}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleAddComment} className="mt-4 flex space-x-2">
+              <input
+                type="text"
+                value={newCommentText}
+                onChange={(e) => setNewCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 p-3 bg-gray-800 border border-gray-700 rounded-full focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+              />
+              <Button type="submit" variant="primary" disabled={!newCommentText.trim()}>
+                Post
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

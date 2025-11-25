@@ -1,8 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import { Video } from '../types';
 import Button from '../components/Button';
-import { generateVideoCaption, ensureApiKeySelected } from '../services/geminiService';
-import { saveVideos } from '../utils/localStorage';
+import { generateVideoCaption } from '../services/geminiService';
+import { addVideo } from '../utils/localStorage'; // Changed from saveVideos to addVideo
 import { VIDEO_PLACEHOLDER_THUMBNAIL } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -52,7 +53,7 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
       setCaption(generatedCaption);
     } catch (err) {
       console.error('Failed to generate caption:', err);
-      const errorMessage = (err as Error).message || 'Failed to generate caption. Please try again or check your API key.';
+      const errorMessage = (err as Error).message || 'Failed to generate caption. Please try again.';
       setError(errorMessage);
 
       // Removed specific API Key error handling, as API key selection is now handled externally.
@@ -85,16 +86,17 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
         description: description,
         caption: caption || description, // Use generated caption or description if no caption
         thumbnail: VIDEO_PLACEHOLDER_THUMBNAIL + Math.floor(Math.random() * 1000), // Random thumbnail
-        likes: Math.floor(Math.random() * 1000),
-        comments: Math.floor(Math.random() * 100),
-        shares: Math.floor(Math.random() * 50),
+        likesCount: 0, // Initialize likes to 0
+        commentsCount: 0, // Initialize comments count to 0
+        shares: 0, // Initialize shares to 0
         artist: 'You', // For this demo, assume "You" are the artist
         file: selectedFile, // Store the file temporarily for persistence
+        commentsData: [], // Initialize with an empty array of comments
       };
 
-      const existingVideos = saveVideos(newVideo); // Save to local storage
-      onVideoPosted(newVideo); // Notify App component
-      
+      // No need to call addVideo here, it's called in App.tsx handleVideoPosted
+      onVideoPosted(newVideo); // Notify App component which then persists
+
       // Reset form
       setSelectedFile(null);
       setVideoPreviewUrl(null);

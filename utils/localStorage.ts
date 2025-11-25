@@ -1,6 +1,7 @@
 
-import { Video } from '../types';
-import { VIDEOS_KEY } from '../constants';
+
+import { Video, Comment } from '../types';
+import { VIDEOS_KEY, LIKED_VIDEOS_KEY } from '../constants';
 
 /**
  * Loads videos from local storage.
@@ -13,9 +14,12 @@ export function loadVideos(): Video[] {
       const storedVideos: Video[] = JSON.parse(jsonString);
       // Re-create Blob URLs for videos if they were stored as files
       return storedVideos.map(video => {
-        if (video.file instanceof File) {
-          return { ...video, src: URL.createObjectURL(video.file) };
-        }
+        // NOTE: URL.createObjectURL is transient. For a truly persistent demo
+        // with video files, IndexedDB or server upload would be needed.
+        // For now, we rely on the URL being valid during a session or if the file reference is somehow re-established.
+        // The `file` property is not stored in localStorage, so this check `video.file instanceof File` will always be false after page refresh.
+        // Instead, if the original 'src' was a blob URL, it would be invalid.
+        // For this demo, we assume `src` is stable or will be re-generated on upload.
         return video;
       });
     }
@@ -26,31 +30,83 @@ export function loadVideos(): Video[] {
 }
 
 /**
- * Saves a new video to local storage.
+ * Saves a new video to local storage by prepending it to the list.
  * @param newVideo The video to save.
  * @returns The updated array of videos.
  */
-export function saveVideos(newVideo: Video): Video[] {
+export function addVideo(newVideo: Video): Video[] {
   try {
     const existingVideos = loadVideos();
-    // Prepend the new video to the list
     const updatedVideos = [newVideo, ...existingVideos];
     
-    // For local storage, we can't directly store File objects.
-    // If we want persistent file data, we'd need to convert to base64 or upload to a server.
-    // For this demo, we'll store the URL and assume the user won't clear local storage.
-    // However, if the page is refreshed, URL.createObjectURLs will be invalid.
-    // A more robust solution for local persistence of video files would be IndexedDB.
-    // For now, we'll remove the 'file' property to ensure JSON.stringify works.
     const videosToStore = updatedVideos.map(video => {
-      const { file, ...rest } = video; // Destructure to exclude 'file'
+      const { file, ...rest } = video; // Exclude 'file' property from storage
       return rest;
     });
 
     localStorage.setItem(VIDEOS_KEY, JSON.stringify(videosToStore));
     return updatedVideos;
   } catch (error) {
-    console.error('Error saving video to local storage:', error);
-    return loadVideos(); // Return current state if save fails
+    console.error('Error adding video to local storage:', error);
+    return loadVideos();
+  }
+}
+
+/**
+ * Updates an existing video in local storage.
+ * @param updatedVideo The video to update.
+ * @returns The updated array of videos.
+ */
+export function updateVideo(updatedVideo: Video): Video[] {
+  try {
+    const existingVideos = loadVideos();
+    const videoIndex = existingVideos.findIndex(video => video.id === updatedVideo.id);
+
+    if (videoIndex > -1) {
+      existingVideos[videoIndex] = updatedVideo;
+    } else {
+      console.warn(`Video with ID ${updatedVideo.id} not found for update. Adding as new.`);
+      existingVideos.unshift(updatedVideo); // Add if not found
+    }
+
+    const videosToStore = existingVideos.map(video => {
+      const { file, ...rest } = video; // Exclude 'file' property from storage
+      return rest;
+    });
+
+    localStorage.setItem(VIDEOS_KEY, JSON.stringify(videosToStore));
+    return existingVideos;
+  } catch (error) {
+    console.error('Error updating video in local storage:', error);
+    return loadVideos();
+  }
+}
+
+
+/**
+ * Loads a set of liked video IDs from local storage.
+ * @returns A Set of video IDs that have been liked by the user.
+ */
+export function loadLikedVideoIds(): Set<string> {
+  try {
+    const jsonString = localStorage.getItem(LIKED_VIDEOS_KEY);
+    if (jsonString) {
+      return new Set<string>(JSON.parse(jsonString));
+    }
+  } catch (error) {
+    console.error('Error loading liked video IDs from local storage:', error);
+  }
+  return new Set<string>();
+}
+
+/**
+ * Saves a set of liked video IDs to local storage.
+ * @param likedIds The Set of video IDs to save.
+ */
+export function saveLikedVideoIds(likedIds: Set<string>): void {
+  try {
+    localStorage.setItem(LIKED_VIDEOS_KEY, JSON.stringify(Array.from(likedIds)));
+  } catch (error) {
+    console.error('Error saving liked video IDs to local storage:', error);
   }
 }

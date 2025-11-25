@@ -1,12 +1,14 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video } from '../types';
 
 interface FeedProps {
   videos: Video[];
+  onVideoUpdate: (video: Video) => void; // New prop for updating videos
 }
 
-const Feed: React.FC<FeedProps> = ({ videos }) => {
+const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate }) => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const feedRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -62,7 +64,7 @@ const Feed: React.FC<FeedProps> = ({ videos }) => {
     >
       {videos.map((video, index) => (
         <div key={video.id} className="w-full h-full flex-shrink-0 snap-start">
-          <VideoPlayer video={video} isActive={index === activeVideoIndex} />
+          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} />
         </div>
       ))}
     </div>

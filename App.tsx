@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
-import { loadVideos } from './utils/localStorage';
+import { loadVideos, addVideo, updateVideo as updateVideoInLocalStorage } from './utils/localStorage';
 // ensureApiKeySelected is deprecated and no longer needed here as per API guidelines.
 
 const App: React.FC = () => {
@@ -24,9 +25,23 @@ const App: React.FC = () => {
   }, []);
 
   const handleVideoPosted = (newVideo: Video) => {
-    setVideos((prevVideos) => [newVideo, ...prevVideos]);
+    setVideos((prevVideos) => {
+      const updatedList = [newVideo, ...prevVideos];
+      addVideo(newVideo); // Persist the new video
+      return updatedList;
+    });
     setCurrentView('feed'); // Go back to feed after posting
   };
+
+  const handleVideoUpdate = useCallback((updatedVideo: Video) => {
+    setVideos(prevVideos => {
+      const newVideos = prevVideos.map(video =>
+        video.id === updatedVideo.id ? updatedVideo : video
+      );
+      updateVideoInLocalStorage(updatedVideo); // Persist the update
+      return newVideos;
+    });
+  }, []);
 
   const renderView = () => {
     // Removed conditional rendering for API key check.
@@ -34,7 +49,7 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'feed':
-        return <Feed videos={videos} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
@@ -44,7 +59,7 @@ const App: React.FC = () => {
           </div>
         );
       default:
-        return <Feed videos={videos} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
     }
   };
 

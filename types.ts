@@ -1,15 +1,23 @@
 
+export interface Comment {
+  id: string;
+  username: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface Video {
   id: string;
   src: string; // URL for the video
   description: string;
   caption: string; // Generated caption by Gemini
   thumbnail: string; // URL for the thumbnail
-  likes: number;
-  comments: number;
+  likesCount: number; // Renamed from 'likes'
+  commentsCount: number; // Renamed from 'comments'
   shares: number;
   artist: string;
   file?: File; // Optional: for client-side representation before upload
+  commentsData: Comment[]; // New: Stores actual comment objects
 }
 
 export type View = 'feed' | 'upload' | 'profile';
