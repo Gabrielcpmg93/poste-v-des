@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
 import { loadVideos } from './utils/localStorage';
-import { ensureApiKeySelected } from './services/geminiService';
+// ensureApiKeySelected is deprecated and no longer needed here as per API guidelines.
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('feed');
   const [videos, setVideos] = useState<Video[]>([]);
-  const [hasCheckedApiKey, setHasCheckedApiKey] = useState(false);
+  // Removed hasCheckedApiKey state, as API key selection is now handled externally.
 
   useEffect(() => {
     // Load videos from local storage on initial mount
@@ -19,18 +18,9 @@ const App: React.FC = () => {
       setVideos(storedVideos);
     }
 
-    // Ensure API key is selected on app load
-    const checkApiKey = async () => {
-      try {
-        await ensureApiKeySelected();
-      } catch (error) {
-        console.error("API Key selection failed:", error);
-        // Optionally, inform the user or keep them on a landing page
-      } finally {
-        setHasCheckedApiKey(true);
-      }
-    };
-    checkApiKey();
+    // Removed API key selection logic from here.
+    // The API key is now assumed to be pre-configured in process.env.API_KEY
+    // and available without user interaction.
   }, []);
 
   const handleVideoPosted = (newVideo: Video) => {
@@ -39,15 +29,8 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    if (!hasCheckedApiKey && currentView === 'upload') {
-      // If API key check is still pending, maybe show a loading or selection prompt
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-white text-lg">
-          <p>Preparing for upload...</p>
-          <p>Please select your API key if prompted.</p>
-        </div>
-      );
-    }
+    // Removed conditional rendering for API key check.
+    // The application proceeds assuming the API key is ready.
 
     switch (currentView) {
       case 'feed':

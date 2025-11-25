@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Video } from '../types';
 import Button from '../components/Button';
@@ -48,7 +47,7 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
     setIsGeneratingCaption(true);
     setError(null);
     try {
-      await ensureApiKeySelected();
+      // API key selection is now handled externally, so no need to call ensureApiKeySelected here.
       const generatedCaption = await generateVideoCaption({ videoDescription: description });
       setCaption(generatedCaption);
     } catch (err) {
@@ -56,13 +55,8 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
       const errorMessage = (err as Error).message || 'Failed to generate caption. Please try again or check your API key.';
       setError(errorMessage);
 
-      // Check for the specific API Key error as per guidelines to re-prompt
-      if (errorMessage.includes("API Key error") || errorMessage.includes("Requested entity was not found.")) {
-        console.log("Gemini API call failed due to API Key error. Re-prompting for API key selection.");
-        // Re-call ensureApiKeySelected to prompt the user again
-        // This will call window.aistudio.openSelectKey() if needed.
-        await ensureApiKeySelected();
-      }
+      // Removed specific API Key error handling, as API key selection is now handled externally.
+      // The application should assume the API key is valid and configured.
     } finally {
       setIsGeneratingCaption(false);
     }

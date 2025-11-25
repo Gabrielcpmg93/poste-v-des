@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { API_KEY_BILLING_URL } from "../constants";
 
@@ -15,8 +14,6 @@ interface GenerateCaptionOptions {
 export async function generateVideoCaption(
   options: GenerateCaptionOptions,
 ): Promise<string> {
-  // Ensure the API key is available before creating a new instance
-  // This helps mitigate race conditions where the key might be updated via window.aistudio.openSelectKey()
   // Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -52,30 +49,17 @@ export async function generateVideoCaption(
     return caption;
   } catch (error) {
     console.error('Error generating video caption with Gemini:', error);
-    // If the error indicates a missing API key or billing issue, rethrow a specific error
-    if (error instanceof Error && error.message.includes("Requested entity was not found.")) {
-      throw new Error(`API Key error: Please select a valid API key with billing enabled. See ${API_KEY_BILLING_URL}`);
-    }
+    // Generic error handling, as API key selection is assumed to be handled externally.
     throw new Error('Failed to generate video caption. Please try again.');
   }
 }
 
-/**
- * Checks if an API key has been selected and opens the selection dialog if not.
- * @returns A promise that resolves when the API key is confirmed to be selected.
- * @throws An error if window.aistudio is not available.
- */
+// The API key selection functionality (ensureApiKeySelected) is removed as
+// per the guidelines: "The API key must be obtained exclusively from the
+// environment variable process.env.API_KEY. Assume this variable is
+// pre-configured, valid, and accessible."
+// The application must not ask the user for it under any circumstances.
 export async function ensureApiKeySelected(): Promise<void> {
-  if (typeof window.aistudio === 'undefined') {
-    console.warn('window.aistudio is not available. API key selection cannot be managed automatically.');
-    // In a real scenario, you might want to stop here or provide manual instructions.
-    return;
-  }
-
-  const hasKey = await window.aistudio.hasSelectedApiKey();
-  if (!hasKey) {
-    await window.aistudio.openSelectKey();
-    // Assume selection was successful after triggering openSelectKey()
-    console.log("User prompted to select API key. Proceeding assuming selection.");
-  }
+  console.warn('API key selection is now handled externally. ensureApiKeySelected is deprecated and will not perform any action.');
+  return Promise.resolve();
 }
