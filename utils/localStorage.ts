@@ -1,7 +1,8 @@
 
 
-import { Video, Comment } from '../types';
-import { VIDEOS_KEY, LIKED_VIDEOS_KEY } from '../constants';
+import { Video, Comment, Profile } from '../types';
+import { VIDEOS_KEY, LIKED_VIDEOS_KEY, PROFILE_KEY } from '../constants';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Loads videos from local storage.
@@ -108,5 +109,39 @@ export function saveLikedVideoIds(likedIds: Set<string>): void {
     localStorage.setItem(LIKED_VIDEOS_KEY, JSON.stringify(Array.from(likedIds)));
   } catch (error) {
     console.error('Error saving liked video IDs to local storage:', error);
+  }
+}
+
+/**
+ * Loads the user profile data from local storage, or returns a default profile.
+ * @returns The user's Profile object.
+ */
+export function loadProfileData(): Profile {
+  try {
+    const jsonString = localStorage.getItem(PROFILE_KEY);
+    if (jsonString) {
+      return JSON.parse(jsonString) as Profile;
+    }
+  } catch (error) {
+    console.error('Error loading profile data from local storage:', error);
+  }
+  // Default profile if none is found or an error occurs
+  return {
+    id: uuidv4(),
+    username: 'QuickVidUser',
+    bio: 'Welcome to my QuickVid profile!',
+    profilePicture: 'https://via.placeholder.com/150/000000/FFFFFF?text=QV', // Default placeholder image
+  };
+}
+
+/**
+ * Saves the user profile data to local storage.
+ * @param profile The Profile object to save.
+ */
+export function saveProfileData(profile: Profile): void {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.error('Error saving profile data to local storage:', error);
   }
 }

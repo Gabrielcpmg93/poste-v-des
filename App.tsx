@@ -4,6 +4,7 @@ import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
+import Profile from './views/Profile'; // Import the new Profile component
 import { loadVideos, addVideo, updateVideo as updateVideoInLocalStorage } from './utils/localStorage';
 // ensureApiKeySelected is deprecated and no longer needed here as per API guidelines.
 
@@ -53,11 +54,7 @@ const App: React.FC = () => {
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
-        return (
-          <div className="flex items-center justify-center h-full text-white text-lg">
-            <p>Profile view (Coming Soon!)</p>
-          </div>
-        );
+        return <Profile />; {/* Render the Profile component */}
       default:
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
     }

@@ -20,4 +20,11 @@ export interface Video {
   commentsData: Comment[]; // New: Stores actual comment objects
 }
 
+export interface Profile {
+  id: string;
+  username: string;
+  bio: string;
+  profilePicture: string; // Base64 string of the image
+}
+
 export type View = 'feed' | 'upload' | 'profile';
