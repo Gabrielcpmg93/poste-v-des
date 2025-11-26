@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
@@ -54,7 +53,7 @@ const App: React.FC = () => {
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
-        return <Profile />; {/* Render the Profile component */}
+        return <Profile videos={videos} />; {/* Pass videos to Profile component */}
       default:
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
     }

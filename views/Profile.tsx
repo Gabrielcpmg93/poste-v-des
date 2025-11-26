@@ -1,15 +1,19 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { Profile as ProfileType } from '../types';
+import { Profile as ProfileType, Video } from '../types'; // Import Video type
 import { loadProfileData, saveProfileData } from '../utils/localStorage';
 import Button from '../components/Button'; // Assuming you have a Button component
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  videos: Video[]; // Add videos prop
+}
+
+const Profile: React.FC<ProfileProps> = ({ videos }) => {
   const [profile, setProfile] = useState<ProfileType>(loadProfileData());
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
   const [editedBio, setEditedBio] = useState('');
   const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null); // Base64 string
+  const [userVideos, setUserVideos] = useState<Video[]>([]); // State for videos posted by this user
 
   useEffect(() => {
     // Load profile data when the component mounts or after saving
@@ -19,6 +23,12 @@ const Profile: React.FC = () => {
     setEditedBio(storedProfile.bio);
     setEditedProfilePicture(storedProfile.profilePicture);
   }, []);
+
+  useEffect(() => {
+    // Filter videos based on the current profile's username
+    const filtered = videos.filter(video => video.artist === profile.username);
+    setUserVideos(filtered);
+  }, [videos, profile.username]); // Re-filter when videos or username changes
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -127,6 +137,31 @@ const Profile: React.FC = () => {
             <Button variant="primary" onClick={handleEditClick} className="mt-6">
               Edit Profile
             </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="w-full max-w-md mt-8">
+        <h3 className="text-xl font-bold mb-4">My Videos ({userVideos.length})</h3>
+        {userVideos.length === 0 ? (
+          <p className="text-gray-400 text-center">You haven't posted any videos yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {userVideos.map((video) => (
+              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 rounded-lg overflow-hidden">
+                <img
+                  src={video.thumbnail}
+                  alt={video.caption || 'Video thumbnail'}
+                  className="w-full h-full object-cover"
+                />
+                {/* Optional: Add an overlay with play icon or likes count */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5V19L19 12L8 5Z" />
+                  </svg>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

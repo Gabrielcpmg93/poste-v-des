@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { Video } from '../types';
 import Button from '../components/Button';
 import { generateVideoCaption } from '../services/geminiService';
-import { addVideo } from '../utils/localStorage'; // Changed from saveVideos to addVideo
+import { addVideo, loadProfileData } from '../utils/localStorage'; // Changed from saveVideos to addVideo
 import { VIDEO_PLACEHOLDER_THUMBNAIL } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,7 +12,7 @@ interface UploadProps {
 
 const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null); // This will now hold Base64 data
   const [description, setDescription] = useState<string>('');
   const [caption, setCaption] = useState<string>('');
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
@@ -26,8 +25,17 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
     const file = event.target.files?.[0] || null;
     setSelectedFile(file);
     if (file) {
-      setVideoPreviewUrl(URL.createObjectURL(file));
       setError(null); // Clear previous errors
+
+      // Read file as Data URL (Base64) for persistence
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVideoPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // WARN: Storing large video files as Base64 in localStorage can quickly exhaust browser storage limits (typically 5-10MB)
+      // and lead to performance issues. For a production app, use server-side storage or IndexedDB.
     } else {
       setVideoPreviewUrl(null);
     }
@@ -64,7 +72,7 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
   };
 
   const handlePostVideo = () => {
-    if (!selectedFile) {
+    if (!selectedFile || !videoPreviewUrl) {
       setError('Please select a video file to upload.');
       return;
     }
@@ -77,24 +85,22 @@ const Upload: React.FC<UploadProps> = ({ onVideoPosted }) => {
     setError(null);
 
     try {
-      // Simulate real video hosting by creating a blob URL for local playback
-      const videoSrc = URL.createObjectURL(selectedFile);
-
+      const currentUserProfile = loadProfileData(); // Get current user's profile
+      
       const newVideo: Video = {
         id: uuidv4(), // Generate a unique ID for the video
-        src: videoSrc,
+        src: videoPreviewUrl, // Use Base64 string for persistent storage
         description: description,
         caption: caption || description, // Use generated caption or description if no caption
         thumbnail: VIDEO_PLACEHOLDER_THUMBNAIL + Math.floor(Math.random() * 1000), // Random thumbnail
         likesCount: 0, // Initialize likes to 0
         commentsCount: 0, // Initialize comments count to 0
         shares: 0, // Initialize shares to 0
-        artist: 'You', // For this demo, assume "You" are the artist
+        artist: currentUserProfile.username, // Use current user's username as artist
         file: selectedFile, // Store the file temporarily for persistence
         commentsData: [], // Initialize with an empty array of comments
       };
 
-      // No need to call addVideo here, it's called in App.tsx handleVideoPosted
       onVideoPosted(newVideo); // Notify App component which then persists
 
       // Reset form
