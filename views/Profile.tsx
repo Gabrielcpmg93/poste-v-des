@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video, Story } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
@@ -106,6 +105,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
       expiryTime: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
     };
     onStoryPosted(newStory);
+    setShowStoryViewerModal(true); // Automatically open the viewer after publishing
   }, [onStoryPosted]);
 
   const handleProfilePictureClick = () => {
