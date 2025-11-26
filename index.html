@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,6 +26,33 @@
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #6b7280; /* gray-500 */
       }
+
+      /* Story gradient border */
+      .border-gradient-story {
+        border-width: 4px;
+        border-style: solid;
+        border-image: linear-gradient(to right, #ff7e5f, #feb47b, #86a8e7, #91eae4) 1;
+        animation: rotateGradient 5s linear infinite; /* Optional: animate the gradient */
+      }
+
+      @keyframes rotateGradient {
+        0% {
+          border-image: linear-gradient(to right, #ff7e5f, #feb47b, #86a8e7, #91eae4) 1;
+        }
+        25% {
+          border-image: linear-gradient(to right, #feb47b, #86a8e7, #91eae4, #ff7e5f) 1;
+        }
+        50% {
+          border-image: linear-gradient(to right, #86a8e7, #91eae4, #ff7e5f, #feb47b) 1;
+        }
+        75% {
+          border-image: linear-gradient(to right, #91eae4, #ff7e5f, #feb47b, #86a8e7) 1;
+        }
+        100% {
+          border-image: linear-gradient(to right, #ff7e5f, #feb47b, #86a8e7, #91eae4) 1;
+        }
+      }
+
     </style>
 <script type="importmap">
 {

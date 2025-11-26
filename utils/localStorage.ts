@@ -1,7 +1,7 @@
 
 
-import { Video, Comment, Profile } from '../types';
-import { VIDEOS_KEY, LIKED_VIDEOS_KEY, PROFILE_KEY } from '../constants';
+import { Video, Comment, Profile, Story } from '../types';
+import { VIDEOS_KEY, LIKED_VIDEOS_KEY, PROFILE_KEY, STORIES_KEY } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -124,6 +124,7 @@ export function loadProfileData(): Profile {
       // Ensure displayId exists; generate if missing for existing profiles
       if (!storedProfile.displayId) {
         storedProfile.displayId = Math.floor(1000000 + Math.random() * 9000000).toString(); // 7-digit random number
+        saveProfileData(storedProfile); // Persist the newly generated ID if missing
       }
       return storedProfile;
     }
@@ -149,5 +150,56 @@ export function saveProfileData(profile: Profile): void {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   } catch (error) {
     console.error('Error saving profile data to local storage:', error);
+  }
+}
+
+/**
+ * Loads active stories from local storage, filtering out expired ones.
+ * @returns An array of active Story objects.
+ */
+export function loadStories(): Story[] {
+  try {
+    const jsonString = localStorage.getItem(STORIES_KEY);
+    if (jsonString) {
+      const storedStories: Story[] = JSON.parse(jsonString);
+      const activeStories = storedStories.filter(story => story.expiryTime > Date.now());
+      // If expired stories were filtered out, save the cleaned list
+      if (activeStories.length < storedStories.length) {
+        saveStories(activeStories);
+      }
+      return activeStories;
+    }
+  } catch (error) {
+    console.error('Error loading stories from local storage:', error);
+  }
+  return [];
+}
+
+/**
+ * Saves an array of Story objects to local storage.
+ * @param stories The array of Story objects to save.
+ */
+export function saveStories(stories: Story[]): void {
+  try {
+    localStorage.setItem(STORIES_KEY, JSON.stringify(stories));
+  } catch (error) {
+    console.error('Error saving stories to local storage:', error);
+  }
+}
+
+/**
+ * Adds a new story to local storage.
+ * @param newStory The Story object to add.
+ * @returns The updated array of active stories.
+ */
+export function addStory(newStory: Story): Story[] {
+  try {
+    const existingStories = loadStories(); // loadStories already filters expired ones
+    const updatedStories = [...existingStories, newStory];
+    saveStories(updatedStories);
+    return updatedStories;
+  } catch (error) {
+    console.error('Error adding story to local storage:', error);
+    return loadStories();
   }
 }

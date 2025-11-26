@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -7,6 +8,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
+  iconOnly?: boolean; // New prop for icon-only buttons
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -17,6 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   className = '',
   disabled,
+  iconOnly = false, // Default to false
   ...props
 }) => {
   const baseStyles = 'font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-opacity-75 transition ease-in-out duration-150 flex items-center justify-center';
@@ -29,9 +32,9 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+    sm: iconOnly ? 'p-1' : 'px-3 py-1.5 text-sm', // Adjusted for iconOnly
+    md: iconOnly ? 'p-2' : 'px-4 py-2 text-base', // Adjusted for iconOnly
+    lg: iconOnly ? 'p-3' : 'px-6 py-3 text-lg', // Adjusted for iconOnly
   };
 
   const disabledStyles = 'opacity-50 cursor-not-allowed';

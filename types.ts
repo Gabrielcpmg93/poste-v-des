@@ -1,4 +1,5 @@
 
+
 export interface Comment {
   id: string;
   username: string;
@@ -26,6 +27,16 @@ export interface Profile {
   bio: string;
   profilePicture: string; // Base64 string of the image
   displayId: string; // New: User-facing ID, inspired by the reference image
+}
+
+export interface Story {
+  id: string;
+  userId: string;
+  username: string;
+  imageUrl: string; // Base64 string of the image
+  audioUrl?: string; // Optional Base64 string of the audio
+  timestamp: number;
+  expiryTime: number; // 24 hours after timestamp
 }
 
 export type View = 'feed' | 'upload' | 'profile';
