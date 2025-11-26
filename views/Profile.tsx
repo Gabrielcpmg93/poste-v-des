@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Profile as ProfileType, Video } from '../types'; // Import Video type
-import { loadProfileData, saveProfileData } from '../utils/localStorage';
-import Button from '../components/Button'; // Assuming you have a Button component
+import { Profile as ProfileType, Video } from '../types';
+import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
+import Button from '../components/Button';
 
 interface ProfileProps {
-  videos: Video[]; // Add videos prop
+  videos: Video[];
 }
 
 const Profile: React.FC<ProfileProps> = ({ videos }) => {
@@ -12,11 +12,13 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
   const [editedBio, setEditedBio] = useState('');
-  const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null); // Base64 string
-  const [userVideos, setUserVideos] = useState<Video[]>([]); // State for videos posted by this user
+  const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null);
+  const [userVideos, setUserVideos] = useState<Video[]>([]);
+  const [likedVideos, setLikedVideos] = useState<Video[]>([]);
+  const [totalLikesReceived, setTotalLikesReceived] = useState(0);
 
+  // Load profile data and initialize edited fields
   useEffect(() => {
-    // Load profile data when the component mounts or after saving
     const storedProfile = loadProfileData();
     setProfile(storedProfile);
     setEditedUsername(storedProfile.username);
@@ -24,11 +26,21 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
     setEditedProfilePicture(storedProfile.profilePicture);
   }, []);
 
+  // Filter videos and calculate stats whenever `videos` or `profile.username` changes
   useEffect(() => {
-    // Filter videos based on the current profile's username
-    const filtered = videos.filter(video => video.artist === profile.username);
-    setUserVideos(filtered);
-  }, [videos, profile.username]); // Re-filter when videos or username changes
+    // Filter user's own videos
+    const filteredUserVideos = videos.filter(video => video.artist === profile.username);
+    setUserVideos(filteredUserVideos);
+
+    // Calculate total likes received by the user's videos
+    const likesSum = filteredUserVideos.reduce((sum, video) => sum + video.likesCount, 0);
+    setTotalLikesReceived(likesSum);
+
+    // Filter liked videos
+    const likedVideoIds = loadLikedVideoIds();
+    const filteredLikedVideos = videos.filter(video => likedVideoIds.has(video.id));
+    setLikedVideos(filteredLikedVideos);
+  }, [videos, profile.username]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -130,32 +142,70 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
             <img
               src={profile.profilePicture}
               alt="Profile"
-              className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-red-500"
+              className="w-36 h-36 rounded-full object-cover mx-auto border-4 border-red-500"
             />
             <h3 className="text-2xl font-bold mt-4">@{profile.username}</h3>
             <p className="text-gray-300 italic">{profile.bio || 'No bio yet.'}</p>
-            <Button variant="primary" onClick={handleEditClick} className="mt-6">
+
+            {/* Profile Statistics */}
+            <div className="flex justify-center space-x-8 mt-6 mb-6">
+              <div>
+                <p className="text-xl font-bold">{userVideos.length}</p>
+                <p className="text-gray-400 text-sm">Videos</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold">{totalLikesReceived}</p>
+                <p className="text-gray-400 text-sm">Likes</p>
+              </div>
+            </div>
+
+            <Button variant="primary" onClick={handleEditClick} className="mt-4">
               Edit Profile
             </Button>
           </div>
         )}
       </div>
 
+      {/* My Videos Section */}
       <div className="w-full max-w-md mt-8">
         <h3 className="text-xl font-bold mb-4">My Videos ({userVideos.length})</h3>
         {userVideos.length === 0 ? (
           <p className="text-gray-400 text-center">You haven't posted any videos yet.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {userVideos.map((video) => (
-              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 rounded-lg overflow-hidden">
+              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 rounded-lg overflow-hidden cursor-pointer group">
                 <img
                   src={video.thumbnail}
                   alt={video.caption || 'Video thumbnail'}
                   className="w-full h-full object-cover"
                 />
-                {/* Optional: Add an overlay with play icon or likes count */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5V19L19 12L8 5Z" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Liked Videos Section */}
+      <div className="w-full max-w-md mt-8 pb-20"> {/* Added pb-20 for space above navigation bar */}
+        <h3 className="text-xl font-bold mb-4">Liked Videos ({likedVideos.length})</h3>
+        {likedVideos.length === 0 ? (
+          <p className="text-gray-400 text-center">You haven't liked any videos yet.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            {likedVideos.map((video) => (
+              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 rounded-lg overflow-hidden cursor-pointer group">
+                <img
+                  src={video.thumbnail}
+                  alt={video.caption || 'Video thumbnail'}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8 5V19L19 12L8 5Z" />
                   </svg>
