@@ -25,6 +25,7 @@ export interface Profile {
   username: string;
   bio: string;
   profilePicture: string; // Base64 string of the image
+  displayId: string; // New: User-facing ID, inspired by the reference image
 }
 
 export type View = 'feed' | 'upload' | 'profile';

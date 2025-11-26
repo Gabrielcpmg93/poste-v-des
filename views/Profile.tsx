@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
@@ -8,7 +9,15 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ videos }) => {
-  const [profile, setProfile] = useState<ProfileType>(loadProfileData());
+  const [profile, setProfile] = useState<ProfileType>(() => {
+    // Initialize profile with displayId from localStorage or generate a new one
+    const storedProfile = loadProfileData();
+    if (!storedProfile.displayId) {
+      storedProfile.displayId = Math.floor(1000000 + Math.random() * 9000000).toString();
+      saveProfileData(storedProfile); // Persist the newly generated ID
+    }
+    return storedProfile;
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
   const [editedBio, setEditedBio] = useState('');
@@ -145,6 +154,7 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
           className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-red-500 mb-2" // Slightly larger profile pic
         />
         <h3 className="text-xl font-bold mt-2">@{profile.username}</h3>
+        <p className="text-gray-400 text-sm mt-1 mb-2">ID: {profile.displayId}</p> {/* Displaying the new displayId */}
         <p className="text-gray-300 text-sm italic mb-4">{profile.bio || 'Sem biografia ainda.'}</p>
         <Button variant="secondary" onClick={handleEditClick} className="w-3/4 mx-auto mb-6"> {/* Centered and wider */}
           Editar Perfil
