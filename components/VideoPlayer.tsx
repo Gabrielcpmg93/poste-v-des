@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Video, Comment } from '../types';
 import Button from './Button';
@@ -142,10 +143,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
 
         {/* Bottom Left User Info and Description */}
         <div className="absolute bottom-32 md:bottom-36 left-4 text-white z-10 max-w-[calc(100%-100px)]">
-          {/* Removed redundant video.artist display */}
-          <p className="font-semibold text-lg md:text-xl mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
-            @{video.artist} {/* Using artist as username for now */}
-          </p>
+          {/* Removed redundant video.artist display, as requested */}
+          {/* <p className="font-semibold text-lg md:text-xl mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
+            @{video.artist}
+          </p> */}
           <p className="text-base md:text-lg mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
             {video.description}
           </p>
@@ -155,8 +156,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
         <div className="absolute right-4 bottom-32 md:bottom-36 flex flex-col items-center space-y-4 z-10">
           {/* Like Button */}
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className={`p-0 ${isLiked ? 'text-red-500' : 'text-white'}`} onClick={handleLikeClick}>
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <Button variant="ghost" size="sm" iconOnly className={`p-0 ${isLiked ? 'text-red-500' : 'text-white'}`} onClick={handleLikeClick}>
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.41 22 8.5C22 12.27 18.6 15.36 13.45 20.03L12 21.35Z"></path>
               </svg>
             </Button>
@@ -164,8 +165,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
           </div>
           {/* Comment Button */}
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className="p-0 text-white" onClick={handleCommentClick}>
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <Button variant="ghost" size="sm" iconOnly className="p-0 text-white" onClick={handleCommentClick}>
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H18L22 22L21.99 4C21.99 2.9 21.1 2 20 2ZM20 16H6V4H20V16Z"></path>
               </svg>
             </Button>
@@ -173,8 +174,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
           </div>
           {/* Share Button */}
           <div className="flex flex-col items-center">
-            <Button variant="ghost" className="p-0 text-white" onClick={(e) => e.stopPropagation()}> {/* Stop propagation for share */}
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <Button variant="ghost" size="sm" iconOnly className="p-0 text-white" onClick={(e) => e.stopPropagation()}> {/* Stop propagation for share */}
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.15C16.44 7.62 17.12 7.92 18 7.92C19.66 7.92 21 6.58 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.85C7.56 9.38 6.88 9.08 6 9.08C4.34 9.08 3 10.42 3 12C3 13.58 4.34 14.92 6 14.92C6.88 14.92 7.56 14.62 8.04 14.15L15.09 18.3C15.04 18.53 15 18.76 15 19C15 20.66 16.34 22 18 22C19.66 22 21 20.66 21 19C21 17.34 19.66 16.08 18 16.08Z"></path>
               </svg>
             </Button>
@@ -184,15 +185,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
 
         {/* Mute Button (Bottom Right, separate) */}
         <div className="absolute right-4 bottom-20 md:bottom-24 flex flex-col items-center z-10"> {/* Adjusted bottom to be above nav bar, separate from action buttons */}
-          <Button variant="ghost" className="p-0 text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
+          <Button variant="ghost" size="sm" iconOnly className="p-0 text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
             {isMuted ? (
               // Mute icon
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4.27 3L3 4.27L7.73 9H3V15H7.73L12 19.27V11.27L17.73 17L19 18.27L20.27 19.55L21.55 20.82L22.83 22.1L24.1 23.37L22.83 24.65L21.55 23.37L20.27 22.1L19 20.82L17.73 19.55L12 13.82L4.27 6.1L3 4.82L4.27 3ZM12 4.09V6.1L9.12 3.22L12 4.09Z M16.5 12C16.5 10.23 15.48 8.78 14 8.19V10.37L16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37L20.27 13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
               </svg>
             ) : (
               // Unmute icon
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 9H7L12 4V20L7 15H3V9ZM16.5 12C16.5 10.23 15.48 8.78 14 8.19V15.81C15.48 15.22 16.5 13.77 16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37V13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
               </svg>
             )}
