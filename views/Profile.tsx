@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
@@ -14,12 +15,8 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ videos }) => {
   const [profile, setProfile] = useState<ProfileType>(() => {
-    // Initialize profile with displayId from localStorage or generate a new one
+    // Initialize profile with displayId, followersCount, and isFollowing from localStorage or generate new ones
     const storedProfile = loadProfileData();
-    if (!storedProfile.displayId) {
-      storedProfile.displayId = Math.floor(1000000 + Math.random() * 9000000).toString();
-      saveProfileData(storedProfile); // Persist the newly generated ID
-    }
     return storedProfile;
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -94,6 +91,18 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
     setProfile(updatedProfile); // Update local state immediately
     setIsEditing(false);
   }, [profile, editedUsername, editedBio, editedProfilePicture]);
+
+  const handleFollowClick = useCallback(() => {
+    if (!profile.isFollowing) {
+      const updatedProfile = {
+        ...profile,
+        followersCount: profile.followersCount + 1,
+        isFollowing: true,
+      };
+      saveProfileData(updatedProfile);
+      setProfile(updatedProfile);
+    }
+  }, [profile]);
 
   // Removed handlePublishStory callback
   // Removed handleProfilePictureClick
@@ -177,11 +186,22 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
           {/* Removed add story button */}
         </div>
         <h3 className="text-xl font-bold mt-2">@{profile.username}</h3>
-        <p className="text-gray-400 text-sm mt-1 mb-2">ID: {profile.displayId}</p> {/* Displaying the new displayId */}
+        <p className="text-gray-400 text-sm mt-1">ID: {profile.displayId}</p> {/* Displaying the new displayId */}
+        <p className="text-gray-400 text-sm mb-2">{profile.followersCount} Seguidores</p> {/* Displaying followers count */}
         <p className="text-gray-300 text-sm italic mb-4">{profile.bio || 'Sem biografia ainda.'}</p>
-        <Button variant="secondary" size="sm" onClick={handleEditClick} className="w-2/3 mx-auto mb-6"> {/* Centered and wider */}
-          Editar Perfil
-        </Button>
+        <div className="flex justify-center space-x-2 mb-6">
+          <Button variant="secondary" size="sm" onClick={handleEditClick}>
+            Editar Perfil
+          </Button>
+          <Button
+            variant={profile.isFollowing ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={handleFollowClick}
+            disabled={profile.isFollowing}
+          >
+            {profile.isFollowing ? 'Seguindo' : 'Seguir'}
+          </Button>
+        </div>
       </div>
 
       {/* Tab Navigation */}

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Video, Comment } from '../types';
 import Button from './Button';
@@ -137,19 +138,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
 
       {/* Video Overlay and Controls */}
       <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-black/70 via-transparent to-transparent">
-        {/* Top Caption */}
-        <div 
-          className="absolute top-4 left-0 right-0 text-center text-white text-3xl md:text-4xl font-extrabold z-10"
-          style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.7)' }}
-        >
-          {video.caption}
-        </div>
+        {/* Removed Top Caption */}
 
         {/* Bottom Left User Info and Description */}
         <div className="absolute bottom-32 md:bottom-36 left-4 text-white z-10 max-w-[calc(100%-100px)]">
-          <p className="font-extrabold text-2xl md:text-3xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.7)' }}>
-            {video.artist}
-          </p>
+          {/* Removed redundant video.artist display */}
           <p className="font-semibold text-lg md:text-xl mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
             @{video.artist} {/* Using artist as username for now */}
           </p>

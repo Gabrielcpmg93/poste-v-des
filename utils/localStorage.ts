@@ -121,11 +121,18 @@ export function loadProfileData(): Profile {
     const jsonString = localStorage.getItem(PROFILE_KEY);
     if (jsonString) {
       const storedProfile: Profile = JSON.parse(jsonString);
-      // Ensure displayId exists; generate if missing for existing profiles
+      // Ensure displayId, followersCount, and isFollowing exist; generate if missing for existing profiles
       if (!storedProfile.displayId) {
         storedProfile.displayId = Math.floor(1000000 + Math.random() * 9000000).toString(); // 7-digit random number
-        saveProfileData(storedProfile); // Persist the newly generated ID if missing
       }
+      if (typeof storedProfile.followersCount !== 'number') {
+        storedProfile.followersCount = 0;
+      }
+      if (typeof storedProfile.isFollowing !== 'boolean') {
+        storedProfile.isFollowing = false;
+      }
+      // Save updated profile if any new fields were added
+      saveProfileData(storedProfile);
       return storedProfile;
     }
   } catch (error) {
@@ -138,6 +145,8 @@ export function loadProfileData(): Profile {
     bio: 'Welcome to my QuickVid profile!',
     profilePicture: 'https://via.placeholder.com/150/000000/FFFFFF?text=QV', // Default placeholder image
     displayId: Math.floor(1000000 + Math.random() * 9000000).toString(), // Generate a new 7-digit ID
+    followersCount: 0,
+    isFollowing: false,
   };
 }
 

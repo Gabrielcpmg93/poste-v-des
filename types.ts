@@ -27,6 +27,8 @@ export interface Profile {
   bio: string;
   profilePicture: string; // Base64 string of the image
   displayId: string; // New: User-facing ID, inspired by the reference image
+  followersCount: number; // New: Number of followers for the profile
+  isFollowing: boolean; // New: Indicates if the current user is following this profile
 }
 
 export type View = 'feed' | 'upload' | 'profile';
