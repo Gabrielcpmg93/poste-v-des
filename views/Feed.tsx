@@ -14,18 +14,8 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
   const feedRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Apply filtering specifically for the feed display
-  const filteredFeedVideos = videos.filter(video =>
-    video.description !== 'teste' &&
-    video.description !== 'vídeo' &&
-    video.artist.toLowerCase() !== 'você'
-  );
-
-  // Check if the logged-in user has *any* videos stored (regardless of feed eligibility)
-  const hasUserEverPosted = videos.some(video => video.artist === loggedInUserProfile.username);
-
-  // The actual videos to display in the feed (only by the logged-in user, filtered)
-  const videosToRender = filteredFeedVideos.filter(video => video.artist === loggedInUserProfile.username);
+  // Use all videos directly, no filtering in the feed itself
+  const videosToRender = videos;
 
   useEffect(() => {
     if (feedRef.current) {
@@ -66,20 +56,8 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
   if (videosToRender.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-black text-gray-400 text-lg p-4 text-center">
-        {hasUserEverPosted ? (
-          <>
-            <p>Nenhum vídeo seu elegível para o feed foi encontrado.</p>
-            <p className="mt-2 text-sm">
-              Note: Vídeos com descrições "teste" ou "vídeo", ou do artista "Você" são filtrados do feed principal.
-            </p>
-            <p className="mt-2 text-sm">Tente postar um novo vídeo com uma descrição diferente!</p>
-          </>
-        ) : (
-          <>
-            <p>Nenhum vídeo ainda! Publique seu primeiro vídeo para desbloquear o feed.</p>
-            <p className="mt-2 text-sm">Navegue até a aba "Upload" para compartilhar seu vídeo.</p>
-          </>
-        )}
+        <p>Nenhum vídeo ainda! Publique seu primeiro vídeo para desbloquear o feed.</p>
+        <p className="mt-2 text-sm">Navegue até a aba "Upload" para compartilhar seu vídeo.</p>
       </div>
     );
   }
