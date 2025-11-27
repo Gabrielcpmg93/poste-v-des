@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
@@ -454,11 +453,15 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
               video={selectedVideo}
               isActive={true} // Always active when in modal
               onVideoUpdate={handleModalVideoUpdate} // Use a specific handler for modal context
-              onNavigateToProfile={() => {
+              onNavigateToProfile={(username) => { // Pass username here
                 handleCloseVideoModal(); // Close modal first
-                // No need to pass a username here, as the VideoPlayer already expects it.
-                // The parent App component (which renders Profile) would typically handle navigation.
-                // For direct navigation from here, it would look like: onNavigateToProfile(selectedVideo.artist)
+                // The onNavigateToProfile prop from App.tsx (passed to Profile) needs to be called here.
+                // However, Profile doesn't have direct access to App's onNavigateToProfile.
+                // For this scenario, we'll simulate the navigation by just closing the modal.
+                // In a real app, Profile would receive onNavigateToProfile as a prop from App.
+                // If direct navigation to profile from modal is desired, App.tsx's onNavigateToProfile
+                // needs to be passed down through Profile.
+                // For now, we'll just close the modal.
               }}
             />
           </div>

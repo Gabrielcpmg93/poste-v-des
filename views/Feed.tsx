@@ -19,7 +19,19 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
   const videosToRender = videos;
 
   useEffect(() => {
-    if (feedRef.current) {
+    // Explicitly set the first video as active when the list of videos changes (e.g., after upload)
+    if (videosToRender.length > 0) {
+      setActiveVideoIndex(0);
+    } else {
+      setActiveVideoIndex(-1); // No active video if list is empty
+    }
+
+    // Clean up previous observer
+    if (observer.current) {
+      observer.current.disconnect();
+    }
+
+    if (feedRef.current && videosToRender.length > 0) {
       observer.current = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -36,14 +48,10 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
         }
       );
 
-      if (videosToRender.length > 0) {
-        Array.from(feedRef.current.children).forEach((child, index) => {
-          if (observer.current) {
-            (child as HTMLElement).setAttribute('data-index', index.toString());
-            observer.current.observe(child);
-          }
-        });
-      }
+      Array.from(feedRef.current.children).forEach((child, index) => {
+        (child as HTMLElement).setAttribute('data-index', index.toString());
+        observer.current?.observe(child); // Use optional chaining for safety
+      });
     }
 
     return () => {
