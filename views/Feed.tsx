@@ -1,13 +1,12 @@
 
-
 import React, { useRef, useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video } from '../types';
 
 interface FeedProps {
   videos: Video[];
-  onVideoUpdate: (video: Video) => void; // New prop for updating videos
-  onNavigateToProfile: () => void; // New prop for navigating to profile
+  onVideoUpdate: (video: Video) => void;
+  onNavigateToProfile: (username: string) => void; // Updated prop type
 }
 
 const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile }) => {
@@ -27,16 +26,14 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile 
           });
         },
         {
-          threshold: 0.75, // Trigger when 75% of the item is visible
-          root: feedRef.current, // Observe within the feed container
+          threshold: 0.75,
+          root: feedRef.current,
           rootMargin: '0px',
         }
       );
 
-      // Attach observer to each video element
       Array.from(feedRef.current.children).forEach((child, index) => {
         if (observer.current) {
-          // Explicitly cast `child` to HTMLElement to ensure `setAttribute` is recognized
           (child as HTMLElement).setAttribute('data-index', index.toString());
           observer.current.observe(child);
         }
@@ -48,7 +45,7 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile 
         observer.current.disconnect();
       }
     };
-  }, [videos]); // Re-run observer setup if videos change
+  }, [videos]);
 
   if (videos.length === 0) {
     return (
@@ -66,7 +63,7 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile 
     >
       {videos.map((video, index) => (
         <div key={video.id} className="w-full h-full flex-shrink-0 snap-start">
-          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={onNavigateToProfile} />
+          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={() => onNavigateToProfile(video.artist)} />
         </div>
       ))}
     </div>

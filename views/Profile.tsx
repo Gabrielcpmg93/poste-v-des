@@ -1,120 +1,150 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
 import Button from '../components/Button';
-// Removed StoryUploadModal and StoryViewerModal imports
-// Add missing import for uuidv4
 import { v4 as uuidv4 } from 'uuid';
 
 interface ProfileProps {
   videos: Video[];
-  // Removed stories and onStoryPosted props
+  viewingUsername: string | null; // New prop: username of the profile to view
 }
 
-const Profile: React.FC<ProfileProps> = ({ videos }) => {
-  const [profile, setProfile] = useState<ProfileType>(() => {
-    // Initialize profile with displayId, followersCount, and isFollowing from localStorage or generate new ones
-    const storedProfile = loadProfileData();
-    return storedProfile;
-  });
+const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
+  // Always load the logged-in user's profile
+  const [loggedInUserProfile, setLoggedInUserProfile] = useState<ProfileType>(loadProfileData);
+
+  // State for the profile currently being displayed (could be logged-in user or another user)
+  const [currentProfile, setCurrentProfile] = useState<ProfileType>(loggedInUserProfile);
+  const [isViewingSelf, setIsViewingSelf] = useState(true);
+
+  // States for editing current user's profile
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
   const [editedBio, setEditedBio] = useState('');
   const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null);
+
+  // States for local follow behavior on *other* profiles (non-persistent)
+  const [otherProfileFollowersCount, setOtherProfileFollowersCount] = useState(0);
+  const [isFollowingOtherProfile, setIsFollowingOtherProfile] = useState(false);
+
   const [userVideos, setUserVideos] = useState<Video[]>([]);
   const [likedVideos, setLikedVideos] = useState<Video[]>([]);
-  // Removed showStoryUploadModal, showStoryViewerModal, justPublishedStoryId, viewerInitialIndex states
-
-  // New state for active tab - added 'monetization'
   const [activeTab, setActiveTab] = useState<'myVideos' | 'likedVideos' | 'about' | 'monetization'>('myVideos');
 
-  // Removed userStories and hasActiveStories derivation
-
-  // Load profile data and initialize edited fields
+  // Effect to determine which profile to display and initialize states
   useEffect(() => {
-    const storedProfile = loadProfileData();
-    setProfile(storedProfile);
-    setEditedUsername(storedProfile.username);
-    setEditedBio(storedProfile.bio);
-    setEditedProfilePicture(storedProfile.profilePicture);
-  }, []);
+    const freshLoggedInProfile = loadProfileData(); // Reload to ensure it's fresh
+    setLoggedInUserProfile(freshLoggedInProfile);
 
-  // Filter videos and calculate stats whenever `videos` or `profile.username` changes
+    const isSelf = !viewingUsername || viewingUsername === freshLoggedInProfile.username;
+    setIsViewingSelf(isSelf);
+
+    if (isSelf) {
+      setCurrentProfile(freshLoggedInProfile);
+      setEditedUsername(freshLoggedInProfile.username);
+      setEditedBio(freshLoggedInProfile.bio);
+      setEditedProfilePicture(freshLoggedInProfile.profilePicture);
+      setIsEditing(false); // Ensure not in editing mode when viewing self initially
+    } else {
+      // Simulate another user's profile
+      setCurrentProfile({
+        id: uuidv4(), // Generate a new ID for the simulated profile
+        username: viewingUsername,
+        bio: `Olá! Eu sou ${viewingUsername} no QuickVid.`, // Generic bio
+        profilePicture: 'https://via.placeholder.com/150/000000/FFFFFF?text=QV', // Default placeholder image
+        displayId: Math.floor(1000000 + Math.random() * 9000000).toString(), // New 7-digit ID
+        followersCount: 0, // Start with 0 followers
+        isFollowing: false, // Start as not following
+      });
+      setIsEditing(false); // Cannot edit another user's profile
+      // Reset local follow states for a new 'other' profile view
+      setOtherProfileFollowersCount(0);
+      setIsFollowingOtherProfile(false);
+    }
+  }, [viewingUsername]); // Re-run when viewingUsername changes
+
+  // Filter videos and calculate stats whenever `videos` or `currentProfile.username` changes
   useEffect(() => {
-    // Filter user's own videos
-    const filteredUserVideos = videos.filter(video => video.artist === profile.username);
+    // Filter user's own videos (based on the profile currently being viewed)
+    const filteredUserVideos = videos.filter(video => video.artist === currentProfile.username);
     setUserVideos(filteredUserVideos);
 
-    // Filter liked videos
-    const likedVideoIds = loadLikedVideoIds();
-    const filteredLikedVideos = videos.filter(video => likedVideoIds.has(video.id));
-    setLikedVideos(filteredLikedVideos);
-
-    // No longer calculating totalLikesReceived for main display as per image
-  }, [videos, profile.username]);
-
-  // Removed effect to open the story viewer after a story has been published
+    // Filter liked videos (only applicable to the logged-in user's profile)
+    // When viewing another profile, 'likedVideos' tab will show an empty state or generic message.
+    if (isViewingSelf) {
+      const likedVideoIds = loadLikedVideoIds();
+      const filteredLikedVideos = videos.filter(video => likedVideoIds.has(video.id));
+      setLikedVideos(filteredLikedVideos);
+    } else {
+      setLikedVideos([]); // Clear liked videos when viewing another profile
+    }
+  }, [videos, currentProfile.username, isViewingSelf]);
 
   const handleEditClick = () => {
-    setIsEditing(true);
+    if (isViewingSelf) {
+      setIsEditing(true);
+    }
   };
 
   const handleCancelClick = () => {
-    setIsEditing(false);
-    // Reset edited fields to current profile values
-    setEditedUsername(profile.username);
-    setEditedBio(profile.bio);
-    setEditedProfilePicture(profile.profilePicture);
+    if (isViewingSelf) {
+      setIsEditing(false);
+      // Reset edited fields to current profile values
+      setEditedUsername(loggedInUserProfile.username);
+      setEditedBio(loggedInUserProfile.bio);
+      setEditedProfilePicture(loggedInUserProfile.profilePicture);
+    }
   };
 
   const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditedProfilePicture(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (isViewingSelf) {
+      const file = event.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setEditedProfilePicture(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
   const handleSaveClick = useCallback(() => {
-    const updatedProfile: ProfileType = {
-      ...profile,
-      username: editedUsername.trim() || 'QuickVidUser',
-      bio: editedBio.trim(),
-      profilePicture: editedProfilePicture || 'https://via.placeholder.com/150/000000/FFFFFF?text=QV',
-    };
-    saveProfileData(updatedProfile);
-    setProfile(updatedProfile); // Update local state immediately
-    setIsEditing(false);
-  }, [profile, editedUsername, editedBio, editedProfilePicture]);
-
-  const handleFollowClick = useCallback(() => {
-    if (!profile.isFollowing) {
-      const updatedProfile = {
-        ...profile,
-        followersCount: profile.followersCount + 1,
-        isFollowing: true,
+    if (isViewingSelf) {
+      const updatedProfile: ProfileType = {
+        ...loggedInUserProfile,
+        username: editedUsername.trim() || 'QuickVidUser',
+        bio: editedBio.trim(),
+        profilePicture: editedProfilePicture || 'https://via.placeholder.com/150/000000/FFFFFF?text=QV',
       };
       saveProfileData(updatedProfile);
-      setProfile(updatedProfile);
+      setLoggedInUserProfile(updatedProfile); // Update logged-in user's state
+      setCurrentProfile(updatedProfile); // Also update currentProfile if viewing self
+      setIsEditing(false);
     }
-  }, [profile]);
+  }, [isViewingSelf, loggedInUserProfile, editedUsername, editedBio, editedProfilePicture]);
 
-  // Removed handlePublishStory callback
-  // Removed handleProfilePictureClick
+  const handleFollowClick = useCallback(() => {
+    if (!isViewingSelf) {
+      // Logic for following another profile (local state only for now)
+      if (!isFollowingOtherProfile) {
+        setOtherProfileFollowersCount(prev => prev + 1);
+        setIsFollowingOtherProfile(true);
+      }
+    }
+    // No "follow" button for self, so no action needed for isViewingSelf
+  }, [isViewingSelf, isFollowingOtherProfile]);
+
 
   // Tab content renderer
   const renderTabContent = () => {
     switch (activeTab) {
       case 'myVideos':
         return userVideos.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">Você ainda não publicou nenhum vídeo.</p>
+          <p className="text-gray-400 text-center py-8">{isViewingSelf ? 'Você' : currentProfile.username} ainda não publicou nenhum vídeo.</p>
         ) : (
-          <div className="grid grid-cols-3 gap-1"> {/* Smaller gap for tighter grid */}
+          <div className="grid grid-cols-3 gap-1">
             {userVideos.map((video) => (
               <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group">
                 <img
@@ -132,10 +162,15 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
           </div>
         );
       case 'likedVideos':
+        if (!isViewingSelf) {
+          return (
+            <p className="text-gray-400 text-center py-8">Não é possível ver os vídeos curtidos de outros usuários.</p>
+          );
+        }
         return likedVideos.length === 0 ? (
           <p className="text-gray-400 text-center py-8">Você ainda não curtiu nenhum vídeo.</p>
         ) : (
-          <div className="grid grid-cols-3 gap-1"> {/* Smaller gap for tighter grid */}
+          <div className="grid grid-cols-3 gap-1">
             {likedVideos.map((video) => (
               <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group">
                 <img
@@ -155,12 +190,16 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
       case 'about':
         return (
           <div className="py-8 text-center text-gray-300">
-            <p className="text-lg font-semibold mb-2">Sobre @{profile.username}</p>
-            <p className="italic">{profile.bio || 'Este usuário ainda não adicionou uma biografia.'}</p>
-            {/* Could add more info here later */}
+            <p className="text-lg font-semibold mb-2">Sobre @{currentProfile.username}</p>
+            <p className="italic">{currentProfile.bio || 'Este usuário ainda não adicionou uma biografia.'}</p>
           </div>
         );
       case 'monetization': // New monetization tab content
+        if (!isViewingSelf) {
+          return (
+            <p className="text-gray-400 text-center py-8">Não é possível ver as informações de monetização de outros usuários.</p>
+          );
+        }
         return (
           <div className="py-8 text-center text-gray-300">
             <p className="text-lg font-semibold mb-2">Monetização</p>
@@ -173,89 +212,87 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start h-full p-0 bg-black text-white overflow-y-auto"> {/* Removed padding here to allow tabs to go full width */}
+    <div className="flex flex-col items-center justify-start h-full p-0 bg-black text-white overflow-y-auto">
       {/* Profile Header - always visible */}
-      <div className="w-full max-w-md bg-black pt-6 pb-4 px-4 text-center"> {/* Added horizontal padding */}
+      <div className="w-full max-w-md bg-black pt-6 pb-4 px-4 text-center">
         <div className="relative w-32 h-32 mx-auto mb-2 group">
           <img
-            src={profile.profilePicture}
+            src={currentProfile.profilePicture}
             alt="Profile"
-            className={`w-full h-full rounded-full object-cover mx-auto border-4 border-red-500`} // Removed gradient border logic
-            // Removed onClick handler for profile picture
+            className={`w-full h-full rounded-full object-cover mx-auto border-4 border-red-500`}
           />
-          {/* Removed add story button */}
         </div>
-        <h3 className="text-xl font-bold mt-2">@{profile.username}</h3>
-        <p className="text-gray-400 text-sm mt-1">ID: {profile.displayId}</p> {/* Displaying the new displayId */}
-        <p className="text-gray-400 text-sm mb-2">{profile.followersCount} Seguidores</p> {/* Displaying followers count */}
-        <p className="text-gray-300 text-sm italic mb-4">{profile.bio || 'Sem biografia ainda.'}</p>
+        <h3 className="text-xl font-bold mt-2">@{currentProfile.username}</h3>
+        <p className="text-gray-400 text-sm mt-1">ID: {currentProfile.displayId}</p>
+        <p className="text-gray-400 text-sm mb-2">
+          {isViewingSelf ? loggedInUserProfile.followersCount : otherProfileFollowersCount} Seguidores
+        </p>
+        <p className="text-gray-300 text-sm italic mb-4">{currentProfile.bio || 'Sem biografia ainda.'}</p>
         <div className="flex justify-center space-x-2 mb-6">
-          <Button variant="secondary" size="sm" onClick={handleEditClick}>
-            Editar Perfil
-          </Button>
-          <Button
-            variant={profile.isFollowing ? 'secondary' : 'primary'}
-            size="sm"
-            onClick={handleFollowClick}
-            disabled={profile.isFollowing}
-          >
-            {profile.isFollowing ? 'Seguindo' : 'Seguir'}
-          </Button>
+          {isViewingSelf ? (
+            <Button variant="secondary" size="sm" onClick={handleEditClick}>
+              Editar Perfil
+            </Button>
+          ) : (
+            <Button
+              variant={isFollowingOtherProfile ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={handleFollowClick}
+              disabled={isFollowingOtherProfile}
+            >
+              {isFollowingOtherProfile ? 'Seguindo' : 'Seguir'}
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="w-full flex justify-around border-b border-gray-700 bg-gray-900 sticky top-0 z-10"> {/* Sticky for better UX */}
-        {/* My Videos Tab */}
+      <div className="w-full flex justify-around border-b border-gray-700 bg-gray-900 sticky top-0 z-10">
         <button
           className={`flex-1 flex flex-col items-center py-2 text-gray-400 relative transition-colors duration-200 
             ${activeTab === 'myVideos' ? 'text-green-500' : 'hover:text-gray-200'}`}
           onClick={() => setActiveTab('myVideos')}
-          aria-label="Ver meus vídeos postados"
+          aria-label={`Ver vídeos postados por ${currentProfile.username}`}
         >
           <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm-11 11h7v7H3v-7zm11 0h7v7h-7v-7z" />
           </svg>
           <span className="text-xs font-semibold">{userVideos.length}</span>
-          {activeTab === 'myVideos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>} {/* thinner indicator */}
+          {activeTab === 'myVideos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>}
         </button>
 
-        {/* Liked Videos Tab */}
         <button
           className={`flex-1 flex flex-col items-center py-2 text-gray-400 relative transition-colors duration-200 
             ${activeTab === 'likedVideos' ? 'text-green-500' : 'hover:text-gray-200'}`}
           onClick={() => setActiveTab('likedVideos')}
-          aria-label="Ver vídeos que você curtiu"
+          aria-label={isViewingSelf ? "Ver vídeos que você curtiu" : "Ver vídeos que este usuário curtiu (não disponível)"}
         >
           <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/> {/* Film reel / video icon */}
+            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
           </svg>
-          <span className="text-xs font-semibold">{likedVideos.length}</span>
+          <span className="text-xs font-semibold">{isViewingSelf ? likedVideos.length : '-'}</span>
           {activeTab === 'likedVideos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>}
         </button>
 
-        {/* About/Info Tab */}
         <button
           className={`flex-1 flex flex-col items-center py-2 text-gray-400 relative transition-colors duration-200 
             ${activeTab === 'about' ? 'text-green-500' : 'hover:text-gray-200'}`}
           onClick={() => setActiveTab('about')}
-          aria-label="Ver informações sobre o perfil"
+          aria-label={`Ver informações sobre ${currentProfile.username}`}
         >
           <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
           </svg>
-          <span className="text-xs font-semibold">Info</span> {/* Added "Info" label for consistency */}
+          <span className="text-xs font-semibold">Info</span>
           {activeTab === 'about' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>}
         </button>
 
-        {/* Monetization Tab (New) */}
         <button
           className={`flex-1 flex flex-col items-center py-2 text-gray-400 relative transition-colors duration-200 
             ${activeTab === 'monetization' ? 'text-green-500' : 'hover:text-gray-200'}`}
           onClick={() => setActiveTab('monetization')}
-          aria-label="Ver informações sobre monetização"
+          aria-label={isViewingSelf ? "Ver informações sobre monetização" : "Ver informações de monetização de outros usuários (não disponível)"}
         >
-          {/* Fix: Replaced malformed SVG with a proper Material Design "MonetizationOn" icon */}
           <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-4H9V8h4c1.1 0 2 .9 2 2v1.5c0 .83-.67 1.5-1.5 1.5h-.5v1.5h2v2zm0-5.5h-2V10h2v.5z"/>
           </svg>
@@ -265,10 +302,9 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
       </div>
 
       {/* Content Area - videos or about info */}
-      <div className="w-full max-w-md bg-black pb-20"> {/* Added pb-20 for space above navigation bar */}
-        {isEditing ? (
-          // Editing UI takes precedence
-          <div className="space-y-6 p-4"> {/* Added padding */}
+      <div className="w-full max-w-md bg-black pb-20">
+        {isEditing && isViewingSelf ? ( // Only allow editing if viewing self AND is in editing mode
+          <div className="space-y-6 p-4">
             <div className="flex flex-col items-center">
               <img
                 src={editedProfilePicture || 'https://via.placeholder.com/150/000000/FFFFFF?text=QV'}
@@ -329,8 +365,6 @@ const Profile: React.FC<ProfileProps> = ({ videos }) => {
           renderTabContent()
         )}
       </div>
-
-      {/* Removed StoryUploadModal and StoryViewerModal */}
     </div>
   );
 };

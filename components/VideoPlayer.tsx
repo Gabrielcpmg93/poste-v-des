@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Video, Comment } from '../types';
 import Button from './Button';
@@ -10,7 +9,7 @@ interface VideoPlayerProps {
   video: Video;
   isActive: boolean; // Indicates if this video is currently in the viewport
   onVideoUpdate: (video: Video) => void; // Callback to update video in App state and localStorage
-  onNavigateToProfile: () => void; // New prop to navigate to profile view
+  onNavigateToProfile: (username: string) => void; // Updated prop to accept username
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdate, onNavigateToProfile }) => {
@@ -161,7 +160,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
             style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}
             onClick={(e) => {
               e.stopPropagation(); // Prevent play/pause
-              onNavigateToProfile();
+              onNavigateToProfile(video.artist); // Pass the artist's username
             }}
           >
             @{video.artist}

@@ -1,40 +1,33 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
-import Profile from './views/Profile'; // Import the new Profile component
-import { loadVideos, addVideo, updateVideo as updateVideoInLocalStorage } from './utils/localStorage';
-// ensureApiKeySelected is deprecated and no longer needed here as per API guidelines.
+import Profile from './views/Profile';
+// Import video utility functions from local storage
+import { loadVideos, addVideo, updateVideo } from './utils/localStorage';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('feed');
   const [videos, setVideos] = useState<Video[]>([]);
-  // Removed stories state
-  // Removed hasCheckedApiKey state, as API key selection is now handled externally.
+  const [viewingProfileUsername, setViewingProfileUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load videos from local storage on initial mount
     const storedVideos = loadVideos();
     if (storedVideos) {
       setVideos(storedVideos);
     }
-    
-    // Removed load stories from local storage
-    // Removed API key selection logic from here.
-    // The API key is now assumed to be pre-configured in process.env.API_KEY
-    // and available without user interaction.
   }, []);
 
   const handleVideoPosted = (newVideo: Video) => {
     setVideos((prevVideos) => {
       const updatedList = [newVideo, ...prevVideos];
-      addVideo(newVideo); // Persist the new video
+      // Use the imported addVideo function
+      addVideo(newVideo);
       return updatedList;
     });
-    setCurrentView('feed'); // Go back to feed after posting
+    setCurrentView('feed');
   };
 
   const handleVideoUpdate = useCallback((updatedVideo: Video) => {
@@ -42,28 +35,25 @@ const App: React.FC = () => {
       const newVideos = prevVideos.map(video =>
         video.id === updatedVideo.id ? updatedVideo : video
       );
-      updateVideoInLocalStorage(updatedVideo); // Persist the update
+      // Use the imported updateVideo function
+      updateVideo(updatedVideo);
       return newVideos;
     });
   }, []);
 
-  const handleNavigateToProfile = useCallback(() => {
+  const handleNavigateToProfile = useCallback((username: string | null) => {
+    setViewingProfileUsername(username);
     setCurrentView('profile');
   }, []);
 
-  // Removed handleStoryPosted callback
-
   const renderView = () => {
-    // Removed conditional rendering for API key check.
-    // The application proceeds assuming the API key is ready.
-
     switch (currentView) {
       case 'feed':
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
-        return <Profile videos={videos} />; {/* Removed stories and story post callback from Profile component props */}
+        return <Profile videos={videos} viewingUsername={viewingProfileUsername} />;
       default:
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
     }
