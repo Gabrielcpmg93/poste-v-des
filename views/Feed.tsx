@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video, Profile as ProfileType } from '../types';
@@ -15,8 +14,18 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
   const feedRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Determine if the logged-in user has posted any videos
-  const hasLoggedInUserPostedVideos = videos.some(video => video.artist === loggedInUserProfile.username);
+  // Apply filtering specifically for the feed display
+  const filteredFeedVideos = videos.filter(video =>
+    video.description !== 'teste' &&
+    video.description !== 'vídeo' &&
+    video.artist.toLowerCase() !== 'você'
+  );
+
+  // Check if the logged-in user has *any* videos stored (regardless of feed eligibility)
+  const hasUserEverPosted = videos.some(video => video.artist === loggedInUserProfile.username);
+
+  // The actual videos to display in the feed (only by the logged-in user, filtered)
+  const videosToRender = filteredFeedVideos.filter(video => video.artist === loggedInUserProfile.username);
 
   useEffect(() => {
     if (feedRef.current) {
@@ -36,8 +45,7 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
         }
       );
 
-      // Only observe if the logged-in user has posted videos, otherwise the feed will be empty
-      if (hasLoggedInUserPostedVideos) {
+      if (videosToRender.length > 0) {
         Array.from(feedRef.current.children).forEach((child, index) => {
           if (observer.current) {
             (child as HTMLElement).setAttribute('data-index', index.toString());
@@ -52,36 +60,37 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
         observer.current.disconnect();
       }
     };
-  }, [videos, hasLoggedInUserPostedVideos]); // Re-run effect if videos or user's posting status changes
+  }, [videosToRender]); // Re-run effect if videosToRender changes
 
-  // Display message if logged-in user hasn't posted any videos
-  if (!hasLoggedInUserPostedVideos) {
+  // Display message if there are no videos to show in the feed
+  if (videosToRender.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-black text-gray-400 text-lg p-4 text-center">
-        <p>No videos yet! Post your first video to unlock the feed.</p>
-        <p className="mt-2 text-sm">Navigate to the "Upload" tab to share your video.</p>
+        {hasUserEverPosted ? (
+          <>
+            <p>Nenhum vídeo seu elegível para o feed foi encontrado.</p>
+            <p className="mt-2 text-sm">
+              Note: Vídeos com descrições "teste" ou "vídeo", ou do artista "Você" são filtrados do feed principal.
+            </p>
+            <p className="mt-2 text-sm">Tente postar um novo vídeo com uma descrição diferente!</p>
+          </>
+        ) : (
+          <>
+            <p>Nenhum vídeo ainda! Publique seu primeiro vídeo para desbloquear o feed.</p>
+            <p className="mt-2 text-sm">Navegue até a aba "Upload" para compartilhar seu vídeo.</p>
+          </>
+        )}
       </div>
     );
   }
 
-  // If the logged-in user has posted videos but there are no actual videos to display (e.g., all filtered out)
-  // This case might happen if 'hasLoggedInUserPostedVideos' is true but 'videos' array becomes empty due to filtering.
-  if (videos.length === 0 && hasLoggedInUserPostedVideos) {
-     return (
-      <div className="flex flex-col items-center justify-center h-full bg-black text-gray-400 text-lg p-4 text-center">
-        <p>No videos to display after filtering.</p>
-        <p className="mt-2 text-sm">Try posting new content!</p>
-      </div>
-    );
-  }
-
-
+  // Render the videos
   return (
     <div
       ref={feedRef}
       className="flex flex-col h-full snap-y snap-mandatory overflow-y-auto scroll-smooth"
     >
-      {videos.map((video, index) => (
+      {videosToRender.map((video, index) => (
         <div key={video.id} className="w-full h-full flex-shrink-0 snap-start">
           <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={() => onNavigateToProfile(video.artist)} />
         </div>
