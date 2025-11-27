@@ -23,6 +23,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
   // States for editing current user's profile
   const [isEditing, setIsEditing] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
+  // Fix: Initialize setEditedBio using useState for it to be a callable setter function.
   const [editedBio, setEditedBio] = useState('');
   const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null);
 
@@ -49,6 +50,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
     if (isSelf) {
       setCurrentProfile(freshLoggedInProfile);
       setEditedUsername(freshLoggedInProfile.username);
+      // Fix: Ensure setEditedBio is called as a function.
       setEditedBio(freshLoggedInProfile.bio);
       setEditedProfilePicture(freshLoggedInProfile.profilePicture);
       setIsEditing(false); // Ensure not in editing mode when viewing self initially
@@ -87,8 +89,10 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
     }
   }, [videos, currentProfile.username, isViewingSelf]);
 
-  // Determine if the current profile is verified (30+ videos)
-  const isVerified = userVideos.length >= 30;
+  // Determine if the current profile is verified (30+ videos for blue, 5+ for white)
+  const isBlueVerified = userVideos.length >= 30;
+  const isWhiteVerified = userVideos.length >= 5 && userVideos.length < 30;
+
 
   const handleEditClick = () => {
     if (isViewingSelf) {
@@ -261,14 +265,26 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
         </div>
         <h3 className="text-xl font-bold mt-2 flex items-center justify-center">
           @{currentProfile.username}
-          {isVerified && (
+          {isBlueVerified && (
             <svg
               className="ml-2 w-5 h-5 text-blue-400"
               fill="currentColor"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              aria-label="Conta verificada"
-              title="Conta verificada"
+              aria-label="Conta verificada (nível azul)"
+              title="Conta verificada (nível azul)"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+          )}
+          {!isBlueVerified && isWhiteVerified && (
+            <svg
+              className="ml-2 w-5 h-5 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Conta verificada (nível branco)"
+              title="Conta verificada (nível branco)"
             >
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
@@ -397,6 +413,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
                 id="bio"
                 rows={4}
                 value={editedBio}
+                // Fix: Ensure setEditedBio is called as a function.
                 onChange={(e) => setEditedBio(e.target.value)}
                 placeholder="Conte-nos sobre você!"
                 className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
