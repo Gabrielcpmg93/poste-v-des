@@ -67,15 +67,17 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
 
   // Effect to open the story viewer after a story has been published and is available in userStories
   useEffect(() => {
-    if (justPublishedStoryId && userStories.length > 0) {
+    if (justPublishedStoryId) {
       const publishedStoryIdx = userStories.findIndex(story => story.id === justPublishedStoryId);
       if (publishedStoryIdx !== -1) {
         setViewerInitialIndex(publishedStoryIdx); // Set the index to the newly published story
         setShowStoryViewerModal(true); // Open the viewer
-        setJustPublishedStoryId(null); // Reset the flag
+        setJustPublishedStoryId(null); // Reset the flag AFTER successfully setting up the viewer
       }
+      // If publishedStoryIdx is -1, the story hasn't appeared in userStories yet.
+      // The effect will re-run when userStories updates, eventually finding the story.
     }
-  }, [justPublishedStoryId, userStories]); // Re-run when justPublishedStoryId or userStories change
+  }, [justPublishedStoryId, userStories, setShowStoryViewerModal]); // Add setShowStoryViewerModal to dependencies for completeness
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -346,7 +348,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
       {showStoryViewerModal && hasActiveStories && (
         <StoryViewerModal
           stories={userStories}
-          onClose={() => setShowStoryViewerModal(false)}
+          onClose={() => {setShowStoryViewerModal(false); setViewerInitialIndex(0);}} // Reset index on close
           initialStoryIndex={viewerInitialIndex}
         />
       )}

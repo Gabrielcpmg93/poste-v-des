@@ -16,23 +16,37 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ stories, onClose, i
   const progressIntervalRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Synchronize currentStoryIndex with initialStoryIndex and stories prop changes
+  // Synchronize currentStoryIndex when initialStoryIndex or stories length changes
+  // This effect ensures the modal starts at the correct story and reacts to story list updates.
   useEffect(() => {
+    // If stories array is empty, force close. This prevents rendering with no content.
     if (stories.length === 0) {
-      // If stories become empty, reset index to 0. The top-level check will close the modal.
-      setCurrentStoryIndex(0);
+      onClose();
       return;
     }
-    // Ensure index is within bounds of updated stories array and update if initialStoryIndex suggests a different start.
-    const newIndex = Math.min(Math.max(0, initialStoryIndex), stories.length - 1);
+
+    // Calculate the new index, ensuring it's within bounds.
+    // Use initialStoryIndex when it changes, otherwise maintain current index relative to new stories length.
+    let newIndex = currentStoryIndex;
+    if (initialStoryIndex !== undefined && initialStoryIndex !== currentStoryIndex) {
+      newIndex = initialStoryIndex;
+    }
+    newIndex = Math.min(Math.max(0, newIndex), stories.length - 1);
+
     if (newIndex !== currentStoryIndex) {
       setCurrentStoryIndex(newIndex);
     }
-  }, [initialStoryIndex, stories.length]); // Depend on stories.length to detect changes in content count
+  }, [initialStoryIndex, stories.length, onClose]); // Depend on stories.length to react to array changes
 
   const currentStory = stories[currentStoryIndex];
 
-  // Fix: Declare handleNextStory and handlePreviousStory before startProgress
+  // If no stories are available, or become unavailable during interaction, close the modal.
+  // This check is performed before rendering to prevent errors.
+  if (stories.length === 0 || !currentStory) {
+    onClose();
+    return null; // Don't render anything
+  }
+
   const handleNextStory = useCallback(() => {
     if (currentStoryIndex < stories.length - 1) {
       setCurrentStoryIndex(prev => prev + 1);
@@ -47,7 +61,6 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ stories, onClose, i
     }
   }, [currentStoryIndex]);
 
-  // Fix: Add handleNextStory to the dependency array of startProgress
   const startProgress = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -75,13 +88,6 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ stories, onClose, i
   }, [storyDuration, handleNextStory]); // Dependencies: storyDuration and handleNextStory (which is useCallback)
 
   useEffect(() => {
-    // If stories array is empty or currentStoryIndex is out of bounds, close the modal.
-    // This is a robust check to handle transient states where data might not be ready.
-    if (!currentStory) {
-      onClose();
-      return;
-    }
-
     setProgress(0); // Reset progress for new story
 
     // Stop and reset previous audio if any
@@ -109,7 +115,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ stories, onClose, i
         audioRef.current.src = ''; // Clear src
       }
     };
-  }, [currentStory, onClose, startProgress]); // Depend on currentStory object directly
+  }, [currentStory, startProgress]); // Depend on currentStory object directly (onClose is not needed here as it's for modal lifecycle)
 
   const handleAudioEnded = () => {
     if (progressIntervalRef.current) {
@@ -117,12 +123,6 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ stories, onClose, i
     }
     handleNextStory();
   };
-
-  // If no stories are available, or become unavailable during interaction, close the modal.
-  if (stories.length === 0 || !currentStory) {
-    onClose();
-    return null; // Don't render anything
-  }
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden">
