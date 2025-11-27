@@ -1,5 +1,4 @@
 
-
 import { Video, Comment, Profile } from '../types';
 import { VIDEOS_KEY, LIKED_VIDEOS_KEY, PROFILE_KEY } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,8 +13,9 @@ export function loadVideos(): Video[] {
     if (jsonString) {
       let storedVideos: Video[] = JSON.parse(jsonString);
       // Filter out videos with specific descriptions as requested
+      // and filter out videos where the artist is 'Você'
       storedVideos = storedVideos.filter(video => 
-        video.description !== 'teste' && video.description !== 'vídeo'
+        video.description !== 'teste' && video.description !== 'vídeo' && video.artist.toLowerCase() !== 'você'
       );
       
       // Re-create Blob URLs for videos if they were stored as files
