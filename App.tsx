@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Video } from './types';
+import { View, Video, Profile as ProfileType } from './types'; // Import ProfileType
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
 import Profile from './views/Profile';
 // Import video utility functions from local storage
-import { loadVideos, addVideo, updateVideo } from './utils/localStorage';
+import { loadVideos, addVideo, updateVideo, loadProfileData } from './utils/localStorage'; // Import loadProfileData
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('feed');
   const [videos, setVideos] = useState<Video[]>([]);
   const [viewingProfileUsername, setViewingProfileUsername] = useState<string | null>(null);
+  const [loggedInUserProfile, setLoggedInUserProfile] = useState<ProfileType>(loadProfileData); // Load logged-in user profile
 
   useEffect(() => {
     const storedVideos = loadVideos();
@@ -27,6 +28,9 @@ const App: React.FC = () => {
       addVideo(newVideo);
       return updatedList;
     });
+    // After posting, update the logged-in user's profile state to reflect potential changes
+    // (e.g., if this was their first video, or if we were tracking video count for internal logic here)
+    setLoggedInUserProfile(loadProfileData()); 
     setCurrentView('feed');
   };
 
@@ -49,13 +53,13 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'feed':
-        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} loggedInUserProfile={loggedInUserProfile} />;
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
         return <Profile videos={videos} viewingUsername={viewingProfileUsername} />;
       default:
-        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} loggedInUserProfile={loggedInUserProfile} />;
     }
   };
 
