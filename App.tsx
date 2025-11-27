@@ -22,12 +22,9 @@ const App: React.FC = () => {
   }, []);
 
   const handleVideoPosted = (newVideo: Video) => {
-    setVideos((prevVideos) => {
-      const updatedList = [newVideo, ...prevVideos];
-      // Use the imported addVideo function
-      addVideo(newVideo);
-      return updatedList;
-    });
+    // Use the return value of addVideo to update the state, ensuring filtering is applied
+    const updatedVideos = addVideo(newVideo); 
+    setVideos(updatedVideos);
     // After posting, update the logged-in user's profile state to reflect potential changes
     // (e.g., if this was their first video, or if we were tracking video count for internal logic here)
     setLoggedInUserProfile(loadProfileData()); 
@@ -35,14 +32,9 @@ const App: React.FC = () => {
   };
 
   const handleVideoUpdate = useCallback((updatedVideo: Video) => {
-    setVideos(prevVideos => {
-      const newVideos = prevVideos.map(video =>
-        video.id === updatedVideo.id ? updatedVideo : video
-      );
-      // Use the imported updateVideo function
-      updateVideo(updatedVideo);
-      return newVideos;
-    });
+    // Use the return value of updateVideo to update the state, ensuring filtering is applied
+    const updatedVideos = updateVideo(updatedVideo);
+    setVideos(updatedVideos);
   }, []);
 
   const handleNavigateToProfile = useCallback((username: string | null) => {
