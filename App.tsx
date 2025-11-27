@@ -50,7 +50,7 @@ const App: React.FC = () => {
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
-        return <Profile videos={videos} viewingUsername={viewingProfileUsername} />;
+        return <Profile videos={videos} viewingUsername={viewingProfileUsername} onNavigateToProfile={handleNavigateToProfile} />;
       default:
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} loggedInUserProfile={loggedInUserProfile} />;
     }

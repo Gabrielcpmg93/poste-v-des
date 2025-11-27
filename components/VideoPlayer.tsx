@@ -106,10 +106,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
       if (isActive) {
         videoRef.current.muted = true; // Ensure video starts muted
         setIsMuted(true);
-        videoRef.current.play().then(() => setIsPlaying(true)).catch((e) => {
-          console.log("Autoplay prevented or error:", e);
-          setIsPlaying(false); // Set to false if autoplay fails
-        });
+        // Defer play slightly to ensure DOM is fully ready
+        setTimeout(() => {
+          videoRef.current?.play().then(() => setIsPlaying(true)).catch((e) => {
+            console.log("Autoplay prevented or error:", e);
+            setIsPlaying(false); // Set to false if autoplay fails
+          });
+        }, 0); // Defer to next tick
       } else {
         videoRef.current.pause();
         setIsPlaying(false);
