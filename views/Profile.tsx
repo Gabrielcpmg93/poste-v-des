@@ -32,6 +32,8 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
   const [likedVideos, setLikedVideos] = useState<Video[]>([]);
   const [showStoryUploadModal, setShowStoryUploadModal] = useState(false);
   const [showStoryViewerModal, setShowStoryViewerModal] = useState(false);
+  const [justPublishedStoryId, setJustPublishedStoryId] = useState<string | null>(null); // New state to track a newly published story
+  const [viewerInitialIndex, setViewerInitialIndex] = useState<number>(0); // New state to control the initial story index for the viewer
 
   // New state for active tab
   const [activeTab, setActiveTab] = useState<'myVideos' | 'likedVideos' | 'about'>('myVideos');
@@ -62,6 +64,18 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
 
     // No longer calculating totalLikesReceived for main display as per image
   }, [videos, profile.username]);
+
+  // Effect to open the story viewer after a story has been published and is available in userStories
+  useEffect(() => {
+    if (justPublishedStoryId && userStories.length > 0) {
+      const publishedStoryIdx = userStories.findIndex(story => story.id === justPublishedStoryId);
+      if (publishedStoryIdx !== -1) {
+        setViewerInitialIndex(publishedStoryIdx); // Set the index to the newly published story
+        setShowStoryViewerModal(true); // Open the viewer
+        setJustPublishedStoryId(null); // Reset the flag
+      }
+    }
+  }, [justPublishedStoryId, userStories]); // Re-run when justPublishedStoryId or userStories change
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -105,12 +119,14 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
       expiryTime: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
     };
     onStoryPosted(newStory);
-    setShowStoryViewerModal(true); // Automatically open the viewer after publishing
+    setJustPublishedStoryId(newStory.id); // Set the ID of the story just published
+    setShowStoryUploadModal(false); // Close the upload modal immediately after publishing
   }, [onStoryPosted]);
 
   const handleProfilePictureClick = () => {
     if (!isEditing) {
       if (hasActiveStories) {
+        setViewerInitialIndex(0); // When clicking, always start from the first story
         setShowStoryViewerModal(true);
       } else {
         setShowStoryUploadModal(true);
@@ -331,6 +347,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
         <StoryViewerModal
           stories={userStories}
           onClose={() => setShowStoryViewerModal(false)}
+          initialStoryIndex={viewerInitialIndex}
         />
       )}
     </div>
