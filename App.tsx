@@ -47,6 +47,10 @@ const App: React.FC = () => {
     });
   }, []);
 
+  const handleNavigateToProfile = useCallback(() => {
+    setCurrentView('profile');
+  }, []);
+
   // Removed handleStoryPosted callback
 
   const renderView = () => {
@@ -55,13 +59,13 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'feed':
-        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
         return <Profile videos={videos} />; {/* Removed stories and story post callback from Profile component props */}
       default:
-        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
+        return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} onNavigateToProfile={handleNavigateToProfile} />;
     }
   };
 

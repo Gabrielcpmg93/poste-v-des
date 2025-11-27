@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video } from '../types';
@@ -6,9 +7,10 @@ import { Video } from '../types';
 interface FeedProps {
   videos: Video[];
   onVideoUpdate: (video: Video) => void; // New prop for updating videos
+  onNavigateToProfile: () => void; // New prop for navigating to profile
 }
 
-const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate }) => {
+const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile }) => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const feedRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -64,7 +66,7 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate }) => {
     >
       {videos.map((video, index) => (
         <div key={video.id} className="w-full h-full flex-shrink-0 snap-start">
-          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} />
+          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={onNavigateToProfile} />
         </div>
       ))}
     </div>

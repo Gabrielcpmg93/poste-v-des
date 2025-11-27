@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Video, Comment } from '../types';
 import Button from './Button';
@@ -9,9 +10,10 @@ interface VideoPlayerProps {
   video: Video;
   isActive: boolean; // Indicates if this video is currently in the viewport
   onVideoUpdate: (video: Video) => void; // Callback to update video in App state and localStorage
+  onNavigateToProfile: () => void; // New prop to navigate to profile view
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdate }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdate, onNavigateToProfile }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -89,6 +91,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
     }
   }, [newCommentText, video, onVideoUpdate]);
 
+  const handleDeleteComment = useCallback((commentId: string) => {
+    const updatedComments = video.commentsData.filter(comment => comment.id !== commentId);
+    const updatedVideo = {
+      ...video,
+      commentsData: updatedComments,
+      commentsCount: updatedComments.length,
+    };
+    onVideoUpdate(updatedVideo);
+  }, [video, onVideoUpdate]);
+
+
   useEffect(() => {
     if (videoRef.current) {
       if (isActive) {
@@ -142,10 +155,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
 
         {/* Bottom Left User Info and Description */}
         <div className="absolute bottom-32 md:bottom-36 left-4 text-white z-10 max-w-[calc(100%-100px)]">
-          {/* Removed redundant video.artist display, as requested */}
-          {/* <p className="font-semibold text-lg md:text-xl mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
+          {/* Re-added and made clickable artist name */}
+          <p
+            className="font-semibold text-lg md:text-xl cursor-pointer"
+            style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent play/pause
+              onNavigateToProfile();
+            }}
+          >
             @{video.artist}
-          </p> */}
+          </p>
           <p className="text-base md:text-lg mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>
             {video.description}
           </p>
@@ -216,12 +236,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
                 <p className="text-gray-400 text-center py-4">Nenhum comentário ainda. Seja o primeiro!</p>
               ) : (
                 video.commentsData.slice().sort((a, b) => a.timestamp - b.timestamp).map((comment) => (
-                  <div key={comment.id} className="bg-gray-800 p-3 rounded-lg">
-                    <p className="font-semibold text-white text-sm">@{comment.username}</p>
-                    <p className="text-gray-300 text-base mt-1">{comment.text}</p>
-                    <span className="text-xs text-gray-500 block mt-1">
-                      {new Date(comment.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                    </span>
+                  <div key={comment.id} className="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-white text-sm">@{comment.username}</p>
+                      <p className="text-gray-300 text-base mt-1">{comment.text}</p>
+                      <span className="text-xs text-gray-500 block mt-1">
+                        {new Date(comment.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                    {comment.username === 'Você' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        className="p-1 text-gray-400 hover:text-red-500"
+                        onClick={() => handleDeleteComment(comment.id)}
+                        aria-label="Excluir comentário"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5L13.5 3h-3L9.5 4H5v2h14V4z"/>
+                        </svg>
+                      </Button>
+                    )}
                   </div>
                 ))
               )}
