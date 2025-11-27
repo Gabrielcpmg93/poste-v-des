@@ -10,7 +10,8 @@ import { loadVideos, addVideo, updateVideo, loadProfileData } from './utils/loca
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('feed');
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]
+  );
   const [viewingProfileUsername, setViewingProfileUsername] = useState<string | null>(null);
   const [loggedInUserProfile, setLoggedInUserProfile] = useState<ProfileType>(loadProfileData); // Load logged-in user profile
 

@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video, Profile as ProfileType } from '../types';
@@ -70,7 +71,7 @@ const Feed: React.FC<FeedProps> = ({ videos, onVideoUpdate, onNavigateToProfile,
     >
       {videosToRender.map((video, index) => (
         <div key={video.id} className="w-full h-full flex-shrink-0 snap-start">
-          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={() => onNavigateToProfile(video.artist)} />
+          <VideoPlayer video={video} isActive={index === activeVideoIndex} onVideoUpdate={onVideoUpdate} onNavigateToProfile={onNavigateToProfile} />
         </div>
       ))}
     </div>
