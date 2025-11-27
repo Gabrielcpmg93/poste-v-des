@@ -4,6 +4,19 @@ import { VIDEOS_KEY, LIKED_VIDEOS_KEY, PROFILE_KEY } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Determines if a video should be included based on defined exclusion criteria.
+ * @param video The video to check.
+ * @returns True if the video should be included, false otherwise.
+ */
+function shouldIncludeVideo(video: Video): boolean {
+  return (
+    video.description !== 'teste' &&
+    video.description !== 'vídeo' &&
+    video.artist.toLowerCase() !== 'você'
+  );
+}
+
+/**
  * Loads videos from local storage.
  * @returns An array of Video objects or null if no videos are found.
  */
@@ -14,18 +27,13 @@ export function loadVideos(): Video[] {
       let storedVideos: Video[] = JSON.parse(jsonString);
       // Filter out videos with specific descriptions as requested
       // and filter out videos where the artist is 'Você'
-      storedVideos = storedVideos.filter(video => 
-        video.description !== 'teste' && video.description !== 'vídeo' && video.artist.toLowerCase() !== 'você'
-      );
+      storedVideos = storedVideos.filter(shouldIncludeVideo);
       
       // Re-create Blob URLs for videos if they were stored as files
       return storedVideos.map(video => {
         // NOTE: URL.createObjectURL is transient. For a truly persistent demo
         // with video files, IndexedDB or server upload would be needed.
-        // For now, we rely on the URL being valid during a session or if the file reference is somehow re-established.
-        // The `file` property is not stored in localStorage, so this check `video.file instanceof File` will always be false after page refresh.
-        // Instead, if the original 'src' was a blob URL, it would be invalid.
-        // For this demo, we assume `src` is stable or will be re-generated on upload.
+        // For now, we assume `src` is stable or will be re-generated on upload.
         return video;
       });
     }
@@ -37,13 +45,20 @@ export function loadVideos(): Video[] {
 
 /**
  * Saves a new video to local storage by prepending it to the list.
+ * Videos that match exclusion criteria will not be added.
  * @param newVideo The video to save.
- * @returns The updated array of videos.
+ * @returns The updated array of videos that meet the inclusion criteria.
  */
 export function addVideo(newVideo: Video): Video[] {
   try {
-    const existingVideos = loadVideos();
-    const updatedVideos = [newVideo, ...existingVideos];
+    // Check if the new video meets the inclusion criteria before adding
+    if (!shouldIncludeVideo(newVideo)) {
+      console.warn('Video not added due to exclusion criteria:', newVideo);
+      return loadVideos(); // Return the current filtered list without the new video
+    }
+
+    const existingVideos = loadVideos(); // This already loads filtered videos
+    const updatedVideos = [newVideo, ...existingVideos]; // newVideo has passed the filter
     
     const videosToStore = updatedVideos.map(video => {
       const { file, ...rest } = video; // Exclude 'file' property from storage
@@ -60,28 +75,40 @@ export function addVideo(newVideo: Video): Video[] {
 
 /**
  * Updates an existing video in local storage.
+ * If the updated video matches exclusion criteria, it will be removed.
  * @param updatedVideo The video to update.
- * @returns The updated array of videos.
+ * @returns The updated array of videos that meet the inclusion criteria.
  */
 export function updateVideo(updatedVideo: Video): Video[] {
   try {
-    const existingVideos = loadVideos();
-    const videoIndex = existingVideos.findIndex(video => video.id === updatedVideo.id);
+    const existingVideos = loadVideos(); // This already loads filtered videos
+    let newVideosList: Video[];
 
-    if (videoIndex > -1) {
-      existingVideos[videoIndex] = updatedVideo;
+    if (shouldIncludeVideo(updatedVideo)) {
+      // If the updated video still meets criteria, find and replace or add if not found
+      const videoIndex = existingVideos.findIndex(video => video.id === updatedVideo.id);
+      if (videoIndex > -1) {
+        newVideosList = existingVideos.map(video =>
+          video.id === updatedVideo.id ? updatedVideo : video
+        );
+      } else {
+        // If not found, add it as new (unlikely for an "update" but handles edge cases)
+        console.warn(`Video with ID ${updatedVideo.id} not found for update, but passes filter. Adding as new.`);
+        newVideosList = [updatedVideo, ...existingVideos];
+      }
     } else {
-      console.warn(`Video with ID ${updatedVideo.id} not found for update. Adding as new.`);
-      existingVideos.unshift(updatedVideo); // Add if not found
+      // If the updated video now fails criteria, filter it out from the list
+      console.warn('Video removed from storage due to updated exclusion criteria:', updatedVideo);
+      newVideosList = existingVideos.filter(video => video.id !== updatedVideo.id);
     }
 
-    const videosToStore = existingVideos.map(video => {
+    const videosToStore = newVideosList.map(video => {
       const { file, ...rest } = video; // Exclude 'file' property from storage
       return rest;
     });
 
     localStorage.setItem(VIDEOS_KEY, JSON.stringify(videosToStore));
-    return existingVideos;
+    return newVideosList;
   } catch (error) {
     console.error('Error updating video in local storage:', error);
     return loadVideos();
