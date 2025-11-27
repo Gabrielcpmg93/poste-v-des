@@ -81,6 +81,9 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
     }
   }, [videos, currentProfile.username, isViewingSelf]);
 
+  // Determine if the current profile is verified (30+ videos)
+  const isVerified = userVideos.length >= 30;
+
   const handleEditClick = () => {
     if (isViewingSelf) {
       setIsEditing(true);
@@ -222,7 +225,21 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
             className={`w-full h-full rounded-full object-cover mx-auto border-4 border-red-500`}
           />
         </div>
-        <h3 className="text-xl font-bold mt-2">@{currentProfile.username}</h3>
+        <h3 className="text-xl font-bold mt-2 flex items-center justify-center">
+          @{currentProfile.username}
+          {isVerified && (
+            <svg
+              className="ml-2 w-5 h-5 text-blue-400"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Conta verificada"
+              title="Conta verificada"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+          )}
+        </h3>
         <p className="text-gray-400 text-sm mt-1">ID: {currentProfile.displayId}</p>
         <p className="text-gray-400 text-sm mb-2">
           {isViewingSelf ? loggedInUserProfile.followersCount : otherProfileFollowersCount} Seguidores
