@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Video, Comment } from '../types';
 import Button from './Button';
@@ -152,8 +151,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
           </p>
         </div>
 
-        {/* Action Buttons (Right Side) */}
-        <div className="absolute right-4 bottom-32 md:bottom-36 flex flex-col items-center space-y-4 z-10">
+        {/* Action Buttons (Right Side) - Grouped and repositioned */}
+        <div className="absolute right-4 bottom-40 flex flex-col items-center space-y-4 z-10">
           {/* Like Button */}
           <div className="flex flex-col items-center">
             <Button variant="ghost" size="sm" iconOnly className={`p-0 ${isLiked ? 'text-red-500' : 'text-white'}`} onClick={handleLikeClick}>
@@ -181,23 +180,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, onVideoUpdat
             </Button>
             <span className="text-sm font-bold text-white mt-1" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{video.shares}</span>
           </div>
-        </div>
-
-        {/* Mute Button (Bottom Right, separate) */}
-        <div className="absolute right-4 bottom-20 md:bottom-24 flex flex-col items-center z-10"> {/* Adjusted bottom to be above nav bar, separate from action buttons */}
-          <Button variant="ghost" size="sm" iconOnly className="p-0 text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
-            {isMuted ? (
-              // Mute icon
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4.27 3L3 4.27L7.73 9H3V15H7.73L12 19.27V11.27L17.73 17L19 18.27L20.27 19.55L21.55 20.82L22.83 22.1L24.1 23.37L22.83 24.65L21.55 23.37L20.27 22.1L19 20.82L17.73 19.55L12 13.82L4.27 6.1L3 4.82L4.27 3ZM12 4.09V6.1L9.12 3.22L12 4.09Z M16.5 12C16.5 10.23 15.48 8.78 14 8.19V10.37L16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37L20.27 13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
-              </svg>
-            ) : (
-              // Unmute icon
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 9H7L12 4V20L7 15H3V9ZM16.5 12C16.5 10.23 15.48 8.78 14 8.19V15.81C15.48 15.22 16.5 13.77 16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37V13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
-              </svg>
-            )}
-          </Button>
+          {/* Mute Button */}
+          <div className="flex flex-col items-center mt-4"> {/* Added margin top to separate from share */}
+            <Button variant="ghost" size="sm" iconOnly className="p-0 text-white" onClick={toggleMute} aria-label={isMuted ? 'Unmute video' : 'Mute video'}>
+              {isMuted ? (
+                // Mute icon
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.27 3L3 4.27L7.73 9H3V15H7.73L12 19.27V11.27L17.73 17L19 18.27L20.27 19.55L21.55 20.82L22.83 22.1L24.1 23.37L22.83 24.65L21.55 23.37L20.27 22.1L19 20.82L17.73 19.55L12 13.82L4.27 6.1L3 4.82L4.27 3ZM12 4.09V6.1L9.12 3.22L12 4.09Z M16.5 12C16.5 10.23 15.48 8.78 14 8.19V10.37L16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37L20.27 13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
+                </svg>
+              ) : (
+                // Unmute icon
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 9H7L12 4V20L7 15H3V9ZM16.5 12C16.5 10.23 15.48 8.78 14 8.19V15.81C15.48 15.22 16.5 13.77 16.5 12ZM19 12C19 10.46 18.06 9.17 16.5 8.5L18.06 7C19.38 7.74 20.27 8.92 20.27 10.37V13.63C20.27 15.08 19.38 16.26 18.06 17L16.5 15.81C18.06 15.14 19 13.86 19 12Z"/>
+                </svg>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 

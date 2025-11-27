@@ -12,7 +12,12 @@ export function loadVideos(): Video[] {
   try {
     const jsonString = localStorage.getItem(VIDEOS_KEY);
     if (jsonString) {
-      const storedVideos: Video[] = JSON.parse(jsonString);
+      let storedVideos: Video[] = JSON.parse(jsonString);
+      // Filter out videos with specific descriptions as requested
+      storedVideos = storedVideos.filter(video => 
+        video.description !== 'teste' && video.description !== 'vídeo'
+      );
+      
       // Re-create Blob URLs for videos if they were stored as files
       return storedVideos.map(video => {
         // NOTE: URL.createObjectURL is transient. For a truly persistent demo
