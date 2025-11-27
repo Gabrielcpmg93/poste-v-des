@@ -1,9 +1,11 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
 import Button from '../components/Button';
 import { v4 as uuidv4 } from 'uuid';
+import VideoPlayer from '../components/VideoPlayer'; // Import VideoPlayer
 
 interface ProfileProps {
   videos: Video[];
@@ -31,6 +33,10 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
   const [userVideos, setUserVideos] = useState<Video[]>([]);
   const [likedVideos, setLikedVideos] = useState<Video[]>([]);
   const [activeTab, setActiveTab] = useState<'myVideos' | 'likedVideos' | 'about' | 'monetization'>('myVideos');
+
+  // States for video playback modal
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   // Effect to determine which profile to display and initialize states
   useEffect(() => {
@@ -139,6 +145,26 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
     // No "follow" button for self, so no action needed for isViewingSelf
   }, [isViewingSelf, isFollowingOtherProfile]);
 
+  const handleVideoClick = useCallback((video: Video) => {
+    setSelectedVideo(video);
+    setShowVideoModal(true);
+  }, []);
+
+  const handleCloseVideoModal = useCallback(() => {
+    setSelectedVideo(null);
+    setShowVideoModal(false);
+  }, []);
+
+  // Placeholder for onVideoUpdate for the VideoPlayer in modal
+  // This would ideally come from App.tsx or a global state manager
+  // For this context, it won't actually update the main videos array.
+  const handleModalVideoUpdate = useCallback((updatedVideo: Video) => {
+    // Implement logic to update videos in local storage if needed.
+    // In a full app, this would dispatch an action to update global video state.
+    console.log('Video updated in modal:', updatedVideo);
+    // Optionally update the selected video's state in the modal to reflect changes
+    setSelectedVideo(prev => prev?.id === updatedVideo.id ? updatedVideo : prev);
+  }, []);
 
   // Tab content renderer
   const renderTabContent = () => {
@@ -149,7 +175,11 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
         ) : (
           <div className="grid grid-cols-3 gap-1">
             {userVideos.map((video) => (
-              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group">
+              <div 
+                key={video.id} 
+                className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group"
+                onClick={() => handleVideoClick(video)} // Add onClick to open modal
+              >
                 <img
                   src={video.thumbnail}
                   alt={video.caption || 'Video thumbnail'}
@@ -175,7 +205,11 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
         ) : (
           <div className="grid grid-cols-3 gap-1">
             {likedVideos.map((video) => (
-              <div key={video.id} className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group">
+              <div 
+                key={video.id} 
+                className="relative w-full aspect-[9/16] bg-gray-800 overflow-hidden cursor-pointer group"
+                onClick={() => handleVideoClick(video)} // Add onClick to open modal
+              >
                 <img
                   src={video.thumbnail}
                   alt={video.caption || 'Video thumbnail'}
@@ -382,6 +416,37 @@ const Profile: React.FC<ProfileProps> = ({ videos, viewingUsername }) => {
           renderTabContent()
         )}
       </div>
+
+      {/* Video Playback Modal */}
+      {showVideoModal && selectedVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="relative w-full h-full max-w-lg max-h-screen">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              iconOnly 
+              className="absolute top-4 right-4 z-50 text-white bg-gray-800 bg-opacity-50 hover:bg-opacity-80 rounded-full p-2"
+              onClick={handleCloseVideoModal}
+              aria-label="Fechar vídeo"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </Button>
+            <VideoPlayer
+              video={selectedVideo}
+              isActive={true} // Always active when in modal
+              onVideoUpdate={handleModalVideoUpdate} // Use a specific handler for modal context
+              onNavigateToProfile={() => {
+                handleCloseVideoModal(); // Close modal first
+                // No need to pass a username here, as the VideoPlayer already expects it.
+                // The parent App component (which renders Profile) would typically handle navigation.
+                // For direct navigation from here, it would look like: onNavigateToProfile(selectedVideo.artist)
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
