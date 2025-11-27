@@ -1,18 +1,18 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Video, Story } from './types';
+import { View, Video } from './types';
 import NavigationBar from './components/NavigationBar';
 import Feed from './views/Feed';
 import Upload from './views/Upload';
 import Profile from './views/Profile'; // Import the new Profile component
-import { loadVideos, addVideo, updateVideo as updateVideoInLocalStorage, loadStories, addStory } from './utils/localStorage';
+import { loadVideos, addVideo, updateVideo as updateVideoInLocalStorage } from './utils/localStorage';
 // ensureApiKeySelected is deprecated and no longer needed here as per API guidelines.
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('feed');
   const [videos, setVideos] = useState<Video[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
+  // Removed stories state
   // Removed hasCheckedApiKey state, as API key selection is now handled externally.
 
   useEffect(() => {
@@ -22,12 +22,7 @@ const App: React.FC = () => {
       setVideos(storedVideos);
     }
     
-    // Load stories from local storage
-    const storedStories = loadStories();
-    if (storedStories) {
-      setStories(storedStories);
-    }
-
+    // Removed load stories from local storage
     // Removed API key selection logic from here.
     // The API key is now assumed to be pre-configured in process.env.API_KEY
     // and available without user interaction.
@@ -52,12 +47,7 @@ const App: React.FC = () => {
     });
   }, []);
 
-  const handleStoryPosted = useCallback((newStory: Story) => {
-    setStories(prevStories => {
-      const updatedList = addStory(newStory); // Persist the new story and get updated list (with expiry filtered)
-      return updatedList;
-    });
-  }, []);
+  // Removed handleStoryPosted callback
 
   const renderView = () => {
     // Removed conditional rendering for API key check.
@@ -69,7 +59,7 @@ const App: React.FC = () => {
       case 'upload':
         return <Upload onVideoPosted={handleVideoPosted} />;
       case 'profile':
-        return <Profile videos={videos} stories={stories} onStoryPosted={handleStoryPosted} />; {/* Pass videos, stories and story post callback to Profile component */}
+        return <Profile videos={videos} />; {/* Removed stories and story post callback from Profile component props */}
       default:
         return <Feed videos={videos} onVideoUpdate={handleVideoUpdate} />;
     }

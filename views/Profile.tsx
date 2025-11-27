@@ -1,20 +1,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Profile as ProfileType, Video, Story } from '../types';
+import { Profile as ProfileType, Video } from '../types';
 import { loadProfileData, saveProfileData, loadLikedVideoIds } from '../utils/localStorage';
 import Button from '../components/Button';
-import StoryUploadModal from '../components/StoryUploadModal';
-import StoryViewerModal from '../components/StoryViewerModal';
+// Removed StoryUploadModal and StoryViewerModal imports
 // Add missing import for uuidv4
 import { v4 as uuidv4 } from 'uuid';
 
 interface ProfileProps {
   videos: Video[];
-  stories: Story[];
-  onStoryPosted: (story: Story) => void;
+  // Removed stories and onStoryPosted props
 }
 
-const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => {
+const Profile: React.FC<ProfileProps> = ({ videos }) => {
   const [profile, setProfile] = useState<ProfileType>(() => {
     // Initialize profile with displayId from localStorage or generate a new one
     const storedProfile = loadProfileData();
@@ -30,17 +28,12 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
   const [editedProfilePicture, setEditedProfilePicture] = useState<string | null>(null);
   const [userVideos, setUserVideos] = useState<Video[]>([]);
   const [likedVideos, setLikedVideos] = useState<Video[]>([]);
-  const [showStoryUploadModal, setShowStoryUploadModal] = useState(false);
-  const [showStoryViewerModal, setShowStoryViewerModal] = useState(false);
-  const [justPublishedStoryId, setJustPublishedStoryId] = useState<string | null>(null); // New state to track a newly published story
-  const [viewerInitialIndex, setViewerInitialIndex] = useState<number>(0); // New state to control the initial story index for the viewer
+  // Removed showStoryUploadModal, showStoryViewerModal, justPublishedStoryId, viewerInitialIndex states
 
-  // New state for active tab
-  const [activeTab, setActiveTab] = useState<'myVideos' | 'likedVideos' | 'about'>('myVideos');
+  // New state for active tab - added 'monetization'
+  const [activeTab, setActiveTab] = useState<'myVideos' | 'likedVideos' | 'about' | 'monetization'>('myVideos');
 
-  // Filter stories specific to the current user
-  const userStories = stories.filter(story => story.userId === profile.id);
-  const hasActiveStories = userStories.length > 0;
+  // Removed userStories and hasActiveStories derivation
 
   // Load profile data and initialize edited fields
   useEffect(() => {
@@ -65,19 +58,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
     // No longer calculating totalLikesReceived for main display as per image
   }, [videos, profile.username]);
 
-  // Effect to open the story viewer after a story has been published and is available in userStories
-  useEffect(() => {
-    if (justPublishedStoryId) {
-      const publishedStoryIdx = userStories.findIndex(story => story.id === justPublishedStoryId);
-      if (publishedStoryIdx !== -1) {
-        setViewerInitialIndex(publishedStoryIdx); // Set the index to the newly published story
-        setShowStoryViewerModal(true); // Open the viewer
-        setJustPublishedStoryId(null); // Reset the flag AFTER successfully setting up the viewer
-      }
-      // If publishedStoryIdx is -1, the story hasn't appeared in userStories yet.
-      // The effect will re-run when userStories updates, eventually finding the story.
-    }
-  }, [justPublishedStoryId, userStories, setShowStoryViewerModal]); // Add setShowStoryViewerModal to dependencies for completeness
+  // Removed effect to open the story viewer after a story has been published
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -114,27 +95,8 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
     setIsEditing(false);
   }, [profile, editedUsername, editedBio, editedProfilePicture]);
 
-  const handlePublishStory = useCallback((storyData: Omit<Story, 'id' | 'expiryTime'>) => {
-    const newStory: Story = {
-      ...storyData,
-      id: uuidv4(),
-      expiryTime: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-    };
-    onStoryPosted(newStory);
-    setJustPublishedStoryId(newStory.id); // Set the ID of the story just published
-    setShowStoryUploadModal(false); // Close the upload modal immediately after publishing
-  }, [onStoryPosted]);
-
-  const handleProfilePictureClick = () => {
-    if (!isEditing) {
-      if (hasActiveStories) {
-        setViewerInitialIndex(0); // When clicking, always start from the first story
-        setShowStoryViewerModal(true);
-      } else {
-        setShowStoryUploadModal(true);
-      }
-    }
-  };
+  // Removed handlePublishStory callback
+  // Removed handleProfilePictureClick
 
   // Tab content renderer
   const renderTabContent = () => {
@@ -189,6 +151,13 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
             {/* Could add more info here later */}
           </div>
         );
+      case 'monetization': // New monetization tab content
+        return (
+          <div className="py-8 text-center text-gray-300">
+            <p className="text-lg font-semibold mb-2">Monetização</p>
+            <p className="italic">Informações sobre monetização serão exibidas aqui.</p>
+          </div>
+        );
       default:
         return null;
     }
@@ -202,20 +171,10 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
           <img
             src={profile.profilePicture}
             alt="Profile"
-            className={`w-full h-full rounded-full object-cover mx-auto border-4 ${hasActiveStories ? 'border-gradient-story' : 'border-red-500'} ${!isEditing ? 'cursor-pointer' : ''}`} // Add gradient border
-            onClick={handleProfilePictureClick}
+            className={`w-full h-full rounded-full object-cover mx-auto border-4 border-red-500`} // Removed gradient border logic
+            // Removed onClick handler for profile picture
           />
-          {!isEditing && !hasActiveStories && (
-            <button
-              className="absolute bottom-0 right-0 bg-red-500 rounded-full p-1.5 flex items-center justify-center text-white border-2 border-black hover:bg-red-600 transition-colors"
-              onClick={(e) => { e.stopPropagation(); setShowStoryUploadModal(true); }}
-              aria-label="Adicionar Story"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-              </svg>
-            </button>
-          )}
+          {/* Removed add story button */}
         </div>
         <h3 className="text-xl font-bold mt-2">@{profile.username}</h3>
         <p className="text-gray-400 text-sm mt-1 mb-2">ID: {profile.displayId}</p> {/* Displaying the new displayId */}
@@ -267,6 +226,21 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
           </svg>
           <span className="text-xs font-semibold">Info</span> {/* Added "Info" label for consistency */}
           {activeTab === 'about' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>}
+        </button>
+
+        {/* Monetization Tab (New) */}
+        <button
+          className={`flex-1 flex flex-col items-center py-2 text-gray-400 relative transition-colors duration-200 
+            ${activeTab === 'monetization' ? 'text-green-500' : 'hover:text-gray-200'}`}
+          onClick={() => setActiveTab('monetization')}
+          aria-label="Ver informações sobre monetização"
+        >
+          {/* Fix: Replaced malformed SVG with a proper Material Design "MonetizationOn" icon */}
+          <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-4H9V8h4c1.1 0 2 .9 2 2v1.5c0 .83-.67 1.5-1.5 1.5h-.5v1.5h2v2zm0-5.5h-2V10h2v.5z"/>
+          </svg>
+          <span className="text-xs font-semibold">Ganhos</span>
+          {activeTab === 'monetization' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>}
         </button>
       </div>
 
@@ -336,22 +310,7 @@ const Profile: React.FC<ProfileProps> = ({ videos, stories, onStoryPosted }) => 
         )}
       </div>
 
-      {showStoryUploadModal && (
-        <StoryUploadModal
-          onClose={() => setShowStoryUploadModal(false)}
-          onPublish={handlePublishStory}
-          userId={profile.id}
-          username={profile.username}
-        />
-      )}
-
-      {showStoryViewerModal && hasActiveStories && (
-        <StoryViewerModal
-          stories={userStories}
-          onClose={() => {setShowStoryViewerModal(false); setViewerInitialIndex(0);}} // Reset index on close
-          initialStoryIndex={viewerInitialIndex}
-        />
-      )}
+      {/* Removed StoryUploadModal and StoryViewerModal */}
     </div>
   );
 };
